@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:uas_ppb/main.dart';
-import 'selectMatches.dart';
-import 'favoritesTeam.dart';
-import 'resultMatches.dart';
+import '../pages/selectMatches.dart';
+import '../pages/favoritesTeam.dart';
+import '../pages/resultMatches.dart';
 
 class AppDrawer extends StatelessWidget {
   @override

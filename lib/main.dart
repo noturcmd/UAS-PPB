@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:uas_ppb/pages/appDrawer.dart';
+import 'package:uas_ppb/drawer/appDrawer.dart';
 import 'pages/selectMatches.dart';
 import 'pages/favoritesTeam.dart';
 import 'pages/resultMatches.dart';
@@ -25,7 +25,7 @@ class NavigationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Football App Navigation'),
+        title: Text('Football Match App'),
       ),
       drawer: AppDrawer(),
       body: Center(

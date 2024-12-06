@@ -3,349 +3,136 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 void main() {
-  runApp(const MyApp());
+  runApp(FootballApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
+class FootballApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Play Music Dashboard',
-      theme: ThemeData(
-        primarySwatch: Colors.indigo,
-      ),
-      home: const DashboardPage(),
-      debugShowCheckedModeBanner: false,
+      title: 'Football Matches',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: MatchesTabScreen(),
     );
   }
 }
 
-class DashboardPage extends StatefulWidget {
-  const DashboardPage({super.key});
-
+class MatchesTabScreen extends StatefulWidget {
   @override
-  _DashboardPageState createState() => _DashboardPageState();
+  _MatchesTabScreenState createState() => _MatchesTabScreenState();
 }
 
-class _DashboardPageState extends State<DashboardPage> {
-  late Future<List<dynamic>> _futureSongs;
+class _MatchesTabScreenState extends State<MatchesTabScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _futureSongs = fetchSongs();
+    _tabController = TabController(length: 3, vsync: this);
   }
 
-  Future<List<dynamic>> fetchSongs() async {
-    final response = await http.get(
-      Uri.parse('https://api.deezer.com/chart'),
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Football Matches'),
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: [
+            Tab(text: 'Premier League'),
+            Tab(text: 'La Liga'),
+            Tab(text: 'Serie A'),
+          ],
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          MatchesScreen(leagueId: 152), // Premier League
+          MatchesScreen(leagueId: 302), // La Liga
+          MatchesScreen(leagueId: 207), // Serie A
+        ],
+      ),
     );
+  }
+}
+
+class MatchesScreen extends StatefulWidget {
+  final int leagueId;
+
+  MatchesScreen({required this.leagueId});
+
+  @override
+  _MatchesScreenState createState() => _MatchesScreenState();
+}
+
+class _MatchesScreenState extends State<MatchesScreen> {
+  List<dynamic> matches = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchMatches();
+  }
+
+  Future<void> fetchMatches() async {
+    const String apiUrl = "https://apiv3.apifootball.com";
+    const String apiKey = "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192"; // Replace with your actual API key
+    final url = Uri.parse(
+        '$apiUrl/?action=get_events&from=2024-12-06&to=2024-12-13&league_id=${widget.leagueId}&APIkey=$apiKey');
+    final response = await http.get(url);
 
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      return data['tracks']['data'];
+      var data = json.decode(response.body);
+      setState(() {
+        matches = data;
+        isLoading = false;
+      });
     } else {
-      throw Exception('Failed to load songs');
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${response.reasonPhrase}')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Play Music',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: false,
-        elevation: 5,
-        backgroundColor: Colors.indigoAccent,
-      ),
-      drawer: const AppSidebar(),
-      body: FutureBuilder<List<dynamic>>(
-        future: _futureSongs,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Failed to load songs: ${snapshot.error}',
-                style: const TextStyle(color: Colors.red),
-              ),
-            );
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(
-              child: Text('No songs available'),
-            );
-          } else {
-            final songs = snapshot.data!;
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: songs.length,
-              itemBuilder: (context, index) {
-                final song = songs[index];
-                return SongCard(
-                  title: song['title'] ?? 'Unknown Title',
-                  artist: song['artist']['name'] ?? 'Unknown Artist',
-                  album: song['album']['title'] ?? 'Unknown Album',
-                  thumbnailUrl: song['album']['cover_medium'] ?? '',
-                );
-              },
-            );
-          }
-        },
-      ),
-    );
-  }
-}
-
-class AppSidebar extends StatelessWidget {
-  const AppSidebar({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Drawer(
-      child: Container(
-        color: Colors.indigo.shade700,
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.indigoAccent,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
-                  Icon(
-                    Icons.music_note,
-                    size: 48,
-                    color: Colors.white,
+    return isLoading
+        ? Center(child: CircularProgressIndicator())
+        : ListView.builder(
+            itemCount: matches.length,
+            itemBuilder: (context, index) {
+              var match = matches[index];
+              return Card(
+                margin: EdgeInsets.all(8.0),
+                child: ListTile(
+                  title: Text(
+                    '${match['match_hometeam_name']} vs ${match['match_awayteam_name']}',
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 8),
-                  Text(
-                    'Play Music',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Date: ${match['match_date']} ${match['match_time']}'),
+                      Text('Status: ${match['match_status']}'),
+                      Text(
+                          'Score: ${match['match_hometeam_score']} - ${match['match_awayteam_score']}'),
+                    ],
                   ),
-                  Text(
-                    'Your personal music hub',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.login, color: Colors.white),
-              title: const Text(
-                'Login',
-                style: TextStyle(color: Colors.white),
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.person_add, color: Colors.white),
-              title: const Text(
-                'Register',
-                style: TextStyle(color: Colors.white),
-              ),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const RegisterPage()),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class SongCard extends StatelessWidget {
-  final String title;
-  final String artist;
-  final String album;
-  final String thumbnailUrl;
-
-  const SongCard({
-    Key? key,
-    required this.title,
-    required this.artist,
-    required this.album,
-    required this.thumbnailUrl,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 4,
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: thumbnailUrl.isNotEmpty
-                  ? Image.network(
-                      thumbnailUrl,
-                      width: 64,
-                      height: 64,
-                      fit: BoxFit.cover,
-                    )
-                  : const Icon(
-                      Icons.music_note,
-                      size: 64,
-                      color: Colors.grey,
-                    ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    artist,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    album,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(Icons.play_arrow, size: 32, color: Colors.indigo),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login'),
-        backgroundColor: Colors.indigoAccent,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const TextField(
-              decoration: InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const TextField(
-              decoration: InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-              ),
-              obscureText: true,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigoAccent,
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-              ),
-              onPressed: () {
-                // Handle login action
-              },
-              child: const Text('Login'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class RegisterPage extends StatelessWidget {
-  const RegisterPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-        backgroundColor: Colors.indigoAccent,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const TextField(
-              decoration: InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const TextField(
-              decoration: InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-              ),
-              obscureText: true,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigoAccent,
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 12),
-              ),
-              onPressed: () {
-                // Handle register action
-              },
-              child: const Text('Register'),
-            ),
-          ],
-        ),
-      ),
-    );
+                ),
+              );
+            },
+          );
   }
 }

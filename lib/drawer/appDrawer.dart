@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:uas_ppb/main.dart';
 import '../pages/selectMatches.dart';
 import '../pages/favoritesTeam.dart';
-import '../pages/resultMatches.dart';
 
 class AppDrawer extends StatelessWidget {
   @override
@@ -27,7 +26,7 @@ class AppDrawer extends StatelessWidget {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => (NavigationScreen())),
+                MaterialPageRoute(builder: (context) => NavigationScreen()),
               );
             },
           ),
@@ -49,7 +48,7 @@ class AppDrawer extends StatelessWidget {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => SelectMatchesScreen()),
+                MaterialPageRoute(builder: (context) => SelectMatchesScreen(matchType: 'recent')),
               );
             },
           ),
@@ -60,7 +59,7 @@ class AppDrawer extends StatelessWidget {
               Navigator.pop(context);
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => ResultMatchesScreen()),
+                MaterialPageRoute(builder: (context) => SelectMatchesScreen(matchType: 'result')),
               );
             },
           ),

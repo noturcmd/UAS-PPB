@@ -2,20 +2,20 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-class LeagueMatchesScreen extends StatefulWidget {
+class LeagueResultScreen extends StatefulWidget {
   final String leagueName;
   final String leagueId;
 
-  const LeagueMatchesScreen({
+  const LeagueResultScreen({
     required this.leagueName,
     required this.leagueId,
   });
 
   @override
-  _LeagueMatchesScreenState createState() => _LeagueMatchesScreenState();
+  _LeagueResultScreenState createState() => _LeagueResultScreenState();
 }
 
-class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
+class _LeagueResultScreenState extends State<LeagueResultScreen> {
   List<dynamic> allMatches = [];
   List<dynamic> filteredMatches = [];
   List<String> matchDates = [];
@@ -25,18 +25,20 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
   @override
   void initState() {
     super.initState();
-    fetchLeagueMatches();
+    fetchLeagueResults();
   }
 
-  Future<void> fetchLeagueMatches() async {
+  Future<void> fetchLeagueResults() async {
     const String apiUrl = "https://apiv3.apifootball.com";
-    const String apiKey = "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192"; // Replace with your actual API key
+    const String apiKey =
+        "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192"; // Replace with your actual API key
 
     DateTime now = DateTime.now();
+    String weekAgo = now.subtract(Duration(days: 7)).toString().split(' ')[0];
     String today = "${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)}";
 
     final url = Uri.parse(
-        '$apiUrl/?action=get_events&from=$today&to=${_getNextWeekDate()}&league_id=${widget.leagueId}&APIkey=$apiKey');
+        '$apiUrl/?action=get_events&from=$weekAgo&to=$today&league_id=${widget.leagueId}&APIkey=$apiKey');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -45,7 +47,7 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
         allMatches = data;
         matchDates = _extractUniqueMatchDates(data);
         if (matchDates.isNotEmpty) {
-          selectedDate = matchDates[0]; // Default to the first available match date
+          selectedDate = matchDates[0]; // Default to the earliest match date
           filterMatchesByDate(selectedDate);
         }
         isLoading = false;
@@ -62,21 +64,20 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
 
   String _twoDigits(int n) => n.toString().padLeft(2, '0');
 
-  String _getNextWeekDate() {
-    DateTime now = DateTime.now();
-    DateTime nextWeek = now.add(Duration(days: 7));
-    return "${nextWeek.year}-${_twoDigits(nextWeek.month)}-${_twoDigits(nextWeek.day)}";
-  }
-
   List<String> _extractUniqueMatchDates(List<dynamic> matches) {
     final dates = matches.map<String>((match) => match['match_date'] as String).toSet().toList();
-    dates.sort(); // Ensure dates are sorted in ascending order
+    dates.sort((a, b) => b.compareTo(a)); // Sort in descending order for past matches
     return dates;
   }
 
   void filterMatchesByDate(String date) {
+    DateTime now = DateTime.now();
     setState(() {
-      filteredMatches = allMatches.where((match) => match['match_date'] == date).toList();
+      filteredMatches = allMatches.where((match) {
+        DateTime matchDateTime = DateTime.parse(
+            '${match['match_date']} ${match['match_time']}');
+        return match['match_date'] == date && matchDateTime.isBefore(now);
+      }).toList();
     });
   }
 
@@ -84,20 +85,20 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
     setState(() {
       isLoading = true;
     });
-    await fetchLeagueMatches();
+    await fetchLeagueResults();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.leagueName} Matches'),
+        title: Text('${widget.leagueName} Results'),
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                // Dynamic date selector
+                // Date selector
                 if (matchDates.isNotEmpty)
                   Container(
                     height: 60,
@@ -142,7 +143,7 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
                     child: filteredMatches.isEmpty
                         ? Center(
                             child: Text(
-                              'No matches available for $selectedDate.',
+                              'No results available for $selectedDate.',
                               textAlign: TextAlign.center,
                               style: TextStyle(fontSize: 16),
                             ),

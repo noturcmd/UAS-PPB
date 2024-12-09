@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:uas_ppb/function/timeConverter.dart';
-import 'package:uas_ppb/screen/matchStatistic.dart'; // Import MatchStatisticScreen
+import 'package:uas_ppb/screen/matchStatistic.dart';
 
 class LeagueResultScreen extends StatefulWidget {
   final String leagueName;

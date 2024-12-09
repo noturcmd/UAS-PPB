@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:uas_ppb/function/timeConverter.dart';
+import 'package:uas_ppb/screen/matchStatistic.dart'; // Import MatchStatisticScreen
 
 class LeagueMatchesScreen extends StatefulWidget {
   final String leagueName;
@@ -30,7 +32,8 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
 
   Future<void> fetchLeagueMatches() async {
     const String apiUrl = "https://apiv3.apifootball.com";
-    const String apiKey = "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192"; // Replace with your actual API key
+    const String apiKey =
+        "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192"; // Replace with your actual API key
 
     DateTime now = DateTime.now();
     String today = "${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)}";
@@ -151,22 +154,44 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
                             itemCount: filteredMatches.length,
                             itemBuilder: (context, index) {
                               var match = filteredMatches[index];
-                              return Card(
-                                margin: EdgeInsets.all(8.0),
-                                child: ListTile(
-                                  title: Text(
-                                    '${match['match_hometeam_name']} vs ${match['match_awayteam_name']}',
-                                    style: TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                          'Date: ${match['match_date']} ${match['match_time']}'),
-                                      Text('Status: ${match['match_status']}'),
-                                      Text(
-                                          'Score: ${match['match_hometeam_score']} - ${match['match_awayteam_score']}'),
-                                    ],
+                              // Convert to Jakarta time
+                              DateTime jakartaTime = convertToJakartaTime(match['match_date'], match['match_time']);
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MatchStatisticScreen(
+                                        matchData: {
+                                          "homeTeam": match['match_hometeam_name'] ?? "Unknown",
+                                          "awayTeam": match['match_awayteam_name'] ?? "Unknown",
+                                          "homeScore": int.tryParse(match['match_hometeam_score'] ?? "0") ?? 0,
+                                          "awayScore": int.tryParse(match['match_awayteam_score'] ?? "0") ?? 0,
+                                          "status": match['match_status'] ?? 'Upcoming',
+                                          "stadium": match['match_stadium'] ?? 'Unknown',
+                                          "statistics": match['statistics'] ?? {}, // Partial stats
+                                        },
+                                        isFullStatistics: false,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Card(
+                                  margin: EdgeInsets.all(8.0),
+                                  child: ListTile(
+                                    title: Text(
+                                      '${match['match_hometeam_name']} vs ${match['match_awayteam_name']}',
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Date: ${jakartaTime.toLocal().toIso8601String().split('T')[0]}'),
+                                        Text('Time: ${jakartaTime.hour.toString().padLeft(2, '0')}:${jakartaTime.minute.toString().padLeft(2, '0')} WIB'),
+                                        Text('Stadium: ${match['match_stadium'] ?? "Unknown"}'),
+                                        Text('Status: ${match['match_status']}'),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               );

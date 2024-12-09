@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:uas_ppb/function/timeConverter.dart';
+import 'package:uas_ppb/screen/matchStatistic.dart'; // Import MatchStatisticScreen
 
 class LeagueResultScreen extends StatefulWidget {
   final String leagueName;
@@ -152,22 +154,78 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
                             itemCount: filteredMatches.length,
                             itemBuilder: (context, index) {
                               var match = filteredMatches[index];
-                              return Card(
-                                margin: EdgeInsets.all(8.0),
-                                child: ListTile(
-                                  title: Text(
-                                    '${match['match_hometeam_name']} vs ${match['match_awayteam_name']}',
-                                    style: TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                          'Date: ${match['match_date']} ${match['match_time']}'),
-                                      Text('Status: ${match['match_status']}'),
-                                      Text(
-                                          'Score: ${match['match_hometeam_score']} - ${match['match_awayteam_score']}'),
-                                    ],
+                              // Convert to Jakarta time
+                              DateTime jakartaTime = convertToJakartaTime(match['match_date'], match['match_time']);
+                              return GestureDetector(
+                                onTap: () async {
+                                  final String apiUrl = "https://apiv3.apifootball.com";
+                                  final String apiKey = "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192"; // Replace with your API key
+                                  final matchId = match['match_id']; // Get match ID from the selected match
+
+                                  // Fetch statistics for the selected match
+                                  final url = Uri.parse('$apiUrl/?action=get_statistics&match_id=$matchId&APIkey=$apiKey');
+                                  final response = await http.get(url);
+
+                                  if (response.statusCode == 200) {
+                                    final data = json.decode(response.body);
+                                    final statisticsData = data[matchId.toString()]?['statistics'] ?? []; // Fetch the statistics array
+
+                                    // Transform statistics into Map<String, dynamic> format
+                                    final Map<String, dynamic> formattedStatistics = {};
+                                    for (var stat in statisticsData) {
+                                      if (stat is Map<String, dynamic> &&
+                                          stat.containsKey('type') &&
+                                          stat.containsKey('home') &&
+                                          stat.containsKey('away')) {
+                                        formattedStatistics[stat['type']] = {
+                                          "home": stat['home'] ?? "0",
+                                          "away": stat['away'] ?? "0",
+                                        };
+                                      }
+                                    }
+
+                                    // Navigate to MatchStatisticScreen with full statistics
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => MatchStatisticScreen(
+                                          matchData: {
+                                            "homeTeam": match['match_hometeam_name'] ?? "Unknown",
+                                            "awayTeam": match['match_awayteam_name'] ?? "Unknown",
+                                            "homeScore": int.tryParse(match['match_hometeam_score'] ?? "0") ?? 0,
+                                            "awayScore": int.tryParse(match['match_awayteam_score'] ?? "0") ?? 0,
+                                            "status": match['match_status'] ?? 'Finished',
+                                            "stadium": match['match_stadium'] ?? 'Unknown',
+                                            "statistics": formattedStatistics,
+                                          },
+                                          isFullStatistics: true,
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    // Handle errors
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Error fetching statistics: ${response.reasonPhrase}')),
+                                    );
+                                  }
+                                },
+                                child: Card(
+                                  margin: EdgeInsets.all(8.0),
+                                  child: ListTile(
+                                    title: Text(
+                                      '${match['match_hometeam_name']} vs ${match['match_awayteam_name']}',
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Date: ${jakartaTime.toLocal().toIso8601String().split('T')[0]}'),
+                                        Text('Time: ${jakartaTime.hour.toString().padLeft(2, '0')}:${jakartaTime.minute.toString().padLeft(2, '0')} WIB'),
+                                        Text('Stadium: ${match['match_stadium'] ?? "Unknown"}'),
+                                        Text('Status: ${match['match_status']}'),
+                                        Text('Score: ${match['match_hometeam_score']} - ${match['match_awayteam_score']}'),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               );

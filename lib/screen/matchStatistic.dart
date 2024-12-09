@@ -73,7 +73,7 @@ class MatchStatisticScreen extends StatelessWidget {
       children: [
         Text(
           team,
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 8),
         Text(

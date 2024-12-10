@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:uas_ppb/screen/teamLineup.dart';
-import 'package:uas_ppb/screen/teamStatistic.dart'; // Ensure this is the correct path
-import 'package:uas_ppb/screen/teamSummary.dart'; // Ensure this is the correct path
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class MatchStatisticScreen extends StatefulWidget {
   final Map<String, dynamic> matchData;
@@ -23,7 +22,9 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
   void initState() {
     super.initState();
     // Set default content
-    currentContent = widget.isFullStatistics ? TeamStatsTable(statistics: widget.matchData['statistics']) : Text("Select an option from the menu");
+    currentContent = widget.isFullStatistics
+        ? TeamStatsTable(statistics: widget.matchData['statistics'] ?? {})
+        : Center(child: Text("Select an option from the menu"));
   }
 
   int getMatchId() {
@@ -40,32 +41,27 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
   }
 
   void updateContent(String title) {
-    Widget newContent;
-    switch (title) {
-      case 'Match Summary':
-        newContent = TeamSummary(matchData: widget.matchData);
-        break;
-      case 'Statistics':
-        newContent = TeamStatsTable(statistics: widget.matchData['statistics']);
-        break;
-      case 'Lineups':
-        int matchId = getMatchId();
-        if (matchId != -1) {
-          newContent = TeamLineup(matchId: matchId);
-        } else {
-          newContent = Text("Invalid match ID");
-        }
-        break;
-      default:
-        newContent = Text("No data available for $title");
-        break;
-    }
-
-    if (currentContent != newContent) {
-      setState(() {
-        currentContent = newContent;
-      });
-    }
+    setState(() {
+      switch (title) {
+        case 'Match Summary':
+          currentContent = TeamSummary(matchData: widget.matchData);
+          break;
+        case 'Statistics':
+          currentContent = TeamStatsTable(statistics: widget.matchData['statistics'] ?? {});
+          break;
+        case 'Lineups':
+          int matchId = getMatchId();
+          if (matchId != -1) {
+            currentContent = TeamLineup(matchId: matchId);
+          } else {
+            currentContent = Center(child: Text("Invalid match ID"));
+          }
+          break;
+        default:
+          currentContent = Center(child: Text("No data available for $title"));
+          break;
+      }
+    });
   }
 
   @override
@@ -84,7 +80,10 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
             _buildMatchHeader(),
             _buildMenuBox(),
             SizedBox(height: 10.0),
-            currentContent ?? Center(child: Text("Please select an option from the menu")),
+            Container(
+              width: double.infinity,
+              child: currentContent ?? Center(child: Text("Please select an option from the menu")),
+            ),
           ],
         ),
       ),
@@ -155,7 +154,6 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
         children: [
           _buildMenuButton('Match Summary'),
           _buildMenuButton('Lineups'),
-          _buildMenuButton('Standing'),
           _buildMenuButton('Statistics'),
         ],
       ),
@@ -173,6 +171,209 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
         backgroundColor: Colors.blueAccent,
         foregroundColor: Colors.white,
         padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+      ),
+    );
+  }
+}
+
+class TeamStatsTable extends StatelessWidget {
+  final Map<String, dynamic> statistics;
+
+  const TeamStatsTable({Key? key, required this.statistics}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    if (statistics.isEmpty) {
+      return Center(
+        child: Text(
+          "No statistics available.",
+          style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
+        ),
+      );
+    }
+
+    return Table(
+      columnWidths: const {
+        0: FlexColumnWidth(1),
+        1: FlexColumnWidth(3),
+        2: FlexColumnWidth(1),
+      },
+      border: TableBorder.all(color: Colors.grey.shade300),
+      children: statistics.entries.map((entry) {
+        return TableRow(
+          decoration: BoxDecoration(
+            color: entry.key.contains("Goal")
+                ? Colors.yellow.withOpacity(0.2)
+                : Colors.transparent,
+          ),
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Text(
+                entry.value["home"].toString(),
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Text(
+                entry.key,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Text(
+                entry.value["away"].toString(),
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 14),
+              ),
+            ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+}
+
+class TeamLineup extends StatefulWidget {
+  final int matchId;
+
+  const TeamLineup({Key? key, required this.matchId}) : super(key: key);
+
+  @override
+  _TeamLineupState createState() => _TeamLineupState();
+}
+
+class _TeamLineupState extends State<TeamLineup> {
+  Map<String, dynamic> lineupData = {};
+
+  @override
+  void initState() {
+    super.initState();
+    fetchLineupData();
+  }
+
+  Future<void> fetchLineupData() async {
+    String apiUrl = 'https://apiv3.apifootball.com';
+    String apiKey = '5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192';
+
+    try {
+      var response = await http.get(Uri.parse("$apiUrl/?action=get_lineups&match_id=${widget.matchId}&APIkey=$apiKey"));
+      if (response.statusCode == 200 && response.body.isNotEmpty) {
+        var data = json.decode(response.body);
+        if (data is Map<String, dynamic> && data.isNotEmpty) {
+          setState(() {
+            lineupData = data[data.keys.first]['lineup'];
+          });
+        }
+      }
+    } catch (e) {
+      print('An error occurred while fetching or parsing data: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Team Lineup'),
+      ),
+      body: lineupData.isNotEmpty
+          ? buildLineupList()
+          : Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  Widget buildLineupList() {
+    if (lineupData.isEmpty) {
+      return Center(child: Text("No lineup data available"));
+    }
+
+    var homePlayers = lineupData['home']['starting_lineups'] as List<dynamic>;
+    var awayPlayers = lineupData['away']['starting_lineups'] as List<dynamic>;
+
+    List<Widget> homeStarters = homePlayers.map((player) {
+      return ListTile(
+        title: Text(player['lineup_player']),
+        trailing: Text('Shirt number: ${player['lineup_number'] ?? 'N/A'}'),
+      );
+    }).toList();
+
+    List<Widget> awayStarters = awayPlayers.map((player) {
+      return ListTile(
+        title: Text(player['lineup_player']),
+        trailing: Text('Shirt number: ${player['lineup_number'] ?? 'N/A'}'),
+      );
+    }).toList();
+
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          ExpansionTile(
+            title: Text('Home Team'),
+            children: homeStarters,
+          ),
+          ExpansionTile(
+            title: Text('Away Team'),
+            children: awayStarters,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TeamSummary extends StatelessWidget {
+  final Map<String, dynamic> matchData;
+
+  const TeamSummary({Key? key, required this.matchData}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    List<dynamic> events = matchData['events'] ?? [];
+
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Teams: ${matchData['homeTeam']} vs ${matchData['awayTeam']}",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Score: ${matchData['homeScore']} - ${matchData['awayScore']}",
+              style: TextStyle(fontSize: 16),
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Status: ${matchData['status']}",
+              style: TextStyle(fontSize: 16),
+            ),
+            SizedBox(height: 8),
+            Text(
+              "Stadium: ${matchData['stadium']}",
+              style: TextStyle(fontSize: 16),
+            ),
+            SizedBox(height: 16),
+            Text(
+              "Match Events:",
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            ...events.map((event) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4.0),
+              child: Text(
+                "${event['time']} ${event['type']} - ${event['player']} (${event['team']})",
+                style: TextStyle(fontSize: 16),
+              ),
+            )).toList(),
+          ],
+        ),
       ),
     );
   }

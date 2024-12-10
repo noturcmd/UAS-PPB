@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uas_ppb/screen/teamLineup.dart';
 import 'package:uas_ppb/screen/teamStatistic.dart'; // Ensure this is the correct path
 import 'package:uas_ppb/screen/teamSummary.dart'; // Ensure this is the correct path
 
@@ -25,6 +26,19 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
     currentContent = widget.isFullStatistics ? TeamStatsTable(statistics: widget.matchData['statistics']) : Text("Select an option from the menu");
   }
 
+  int getMatchId() {
+    try {
+      if (widget.matchData.containsKey('matchId') && widget.matchData['matchId'] != null) {
+        return int.parse(widget.matchData['matchId'].toString());
+      } else {
+        throw Exception("Match ID not found or invalid");
+      }
+    } catch (e) {
+      print('Error parsing match ID: $e');
+      return -1; // Return a default or error code
+    }
+  }
+
   void updateContent(String title) {
     Widget newContent;
     switch (title) {
@@ -33,6 +47,14 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
         break;
       case 'Statistics':
         newContent = TeamStatsTable(statistics: widget.matchData['statistics']);
+        break;
+      case 'Lineups':
+        int matchId = getMatchId();
+        if (matchId != -1) {
+          newContent = TeamLineup(matchId: matchId);
+        } else {
+          newContent = Text("Invalid match ID");
+        }
         break;
       default:
         newContent = Text("No data available for $title");

@@ -197,7 +197,7 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
                                             "status": match['match_status'] ?? 'Finished',
                                             "stadium": match['match_stadium'] ?? 'Unknown',
                                             "statistics": formattedStatistics,
-                                            "matchId": match['match_id'], // Ensure this is correct
+                                            "matchId": match['match_id'], // Pass match_id correctly
                                           },
                                           isFullStatistics: true,
                                         ),

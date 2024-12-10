@@ -29,18 +29,12 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
 
   int getMatchId() {
     try {
-      print("Match Data: ${widget.matchData}");
-      if (widget.matchData.containsKey('matchId') && widget.matchData['matchId'] != null) {
-        return int.parse(widget.matchData['matchId'].toString());
-      } else {
-        throw Exception("Match ID not found or invalid");
-      }
+      return int.parse(widget.matchData['matchId'].toString());
     } catch (e) {
       print('Error parsing match ID: $e');
       return -1; // Return a default or error code
     }
   }
-
 
   void updateContent(String title) {
     setState(() {
@@ -75,19 +69,16 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _buildMatchHeader(),
-            _buildMenuBox(),
-            SizedBox(height: 10.0),
-            Container(
-              width: double.infinity,
-              child: currentContent ?? Center(child: Text("Please select an option from the menu")),
-            ),
-          ],
-        ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildMatchHeader(),
+          _buildMenuBox(),
+          SizedBox(height: 10.0),
+          Expanded(
+            child: currentContent ?? Center(child: Text("Please select an option from the menu")),
+          ),
+        ],
       ),
     );
   }
@@ -260,34 +251,43 @@ class _TeamLineupState extends State<TeamLineup> {
 
   Future<void> fetchLineupData() async {
     String apiUrl = 'https://apiv3.apifootball.com';
-    String apiKey = 'your_api_key_here';  // Replace with your actual API key
-    var response = await http.get(Uri.parse("$apiUrl/?action=get_lineups&match_id=${widget.matchId}&APIkey=$apiKey"));
+    String apiKey = '5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192';  // Replace with your actual API key
+    final url = "$apiUrl/?action=get_lineups&match_id=${widget.matchId}&APIkey=$apiKey";
 
-    print("Fetching lineup data for match ID: ${widget.matchId}");
+    print("Fetching lineup data from: $url");
+    try {
+      var response = await http.get(Uri.parse(url));
 
-    if (response.statusCode == 200) {
-      print("API Response: ${response.body}");
-      var data = json.decode(response.body);
-      if (data is Map<String, dynamic> && data.isNotEmpty) {
-        setState(() {
-          // Use a safe check for dynamic keys
-          String firstKey = data.keys.first;
-          lineupData = data[firstKey]['lineup'] ?? {};
+      if (response.statusCode == 200) {
+        print("API Response: ${response.body}");
+
+        var data = json.decode(response.body);
+
+        // Ensure data is not empty and contains the match_id key
+        if (data != null && data.containsKey(widget.matchId.toString())) {
+          setState(() {
+            lineupData = data[widget.matchId.toString()]['lineup'] ?? {};
+          });
+
           print("Parsed Lineup Data: $lineupData");
-        });
+        } else {
+          print("Error: No lineup data available for match ID ${widget.matchId}");
+          setState(() {
+            lineupData = {};
+          });
+        }
       } else {
         print("Error: Failed to fetch data. Status code: ${response.statusCode}");
         print("Response body: ${response.body}");
         setState(() {
           lineupData = {};
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load lineup data. Please try again later.')),
-        );
       }
-    } else {
-      print("Error: Failed to fetch data. Status code: ${response.statusCode}");
-      throw Exception('Failed to load lineup data');
+    } catch (e) {
+      print("Exception while fetching lineup data: $e");
+      setState(() {
+        lineupData = {};
+      });
     }
   }
 
@@ -310,36 +310,35 @@ class _TeamLineupState extends State<TeamLineup> {
       return Center(child: Text("No lineup data available"));
     }
 
-    List<dynamic> homePlayers = lineupData['home']?['starting_lineups'] ?? [];
-    List<dynamic> awayPlayers = lineupData['away']?['starting_lineups'] ?? [];
+    var homePlayers = lineupData['home']?['starting_lineups'] ?? [];
+    var awayPlayers = lineupData['away']?['starting_lineups'] ?? [];
 
-    List<Widget> homeStarters = homePlayers.map((player) {
+    List<Widget> homeStarters = homePlayers.map<Widget>((player) {
       return ListTile(
         title: Text(player['lineup_player'] ?? 'Unknown Player'),
         trailing: Text('Shirt number: ${player['lineup_number'] ?? 'N/A'}'),
       );
     }).toList();
 
-    List<Widget> awayStarters = awayPlayers.map((player) {
+    List<Widget> awayStarters = awayPlayers.map<Widget>((player) {
       return ListTile(
         title: Text(player['lineup_player'] ?? 'Unknown Player'),
         trailing: Text('Shirt number: ${player['lineup_number'] ?? 'N/A'}'),
       );
     }).toList();
 
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          ExpansionTile(
-            title: Text('Home Team'),
-            children: homeStarters,
-          ),
-          ExpansionTile(
-            title: Text('Away Team'),
-            children: awayStarters,
-          ),
-        ],
-      ),
+    return ListView(
+      shrinkWrap: true,
+      children: [
+        ExpansionTile(
+          title: Text('Home Team'),
+          children: homeStarters,
+        ),
+        ExpansionTile(
+          title: Text('Away Team'),
+          children: awayStarters,
+        ),
+      ],
     );
   }
 }

@@ -29,6 +29,7 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
 
   int getMatchId() {
     try {
+      print("Match Data: ${widget.matchData}");
       if (widget.matchData.containsKey('matchId') && widget.matchData['matchId'] != null) {
         return int.parse(widget.matchData['matchId'].toString());
       } else {
@@ -39,6 +40,7 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
       return -1; // Return a default or error code
     }
   }
+
 
   void updateContent(String title) {
     setState(() {
@@ -258,20 +260,34 @@ class _TeamLineupState extends State<TeamLineup> {
 
   Future<void> fetchLineupData() async {
     String apiUrl = 'https://apiv3.apifootball.com';
-    String apiKey = '5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192';
+    String apiKey = 'your_api_key_here';  // Replace with your actual API key
+    var response = await http.get(Uri.parse("$apiUrl/?action=get_lineups&match_id=${widget.matchId}&APIkey=$apiKey"));
 
-    try {
-      var response = await http.get(Uri.parse("$apiUrl/?action=get_lineups&match_id=${widget.matchId}&APIkey=$apiKey"));
-      if (response.statusCode == 200 && response.body.isNotEmpty) {
-        var data = json.decode(response.body);
-        if (data is Map<String, dynamic> && data.isNotEmpty) {
-          setState(() {
-            lineupData = data[data.keys.first]['lineup'];
-          });
-        }
+    print("Fetching lineup data for match ID: ${widget.matchId}");
+
+    if (response.statusCode == 200) {
+      print("API Response: ${response.body}");
+      var data = json.decode(response.body);
+      if (data is Map<String, dynamic> && data.isNotEmpty) {
+        setState(() {
+          // Use a safe check for dynamic keys
+          String firstKey = data.keys.first;
+          lineupData = data[firstKey]['lineup'] ?? {};
+          print("Parsed Lineup Data: $lineupData");
+        });
+      } else {
+        print("Error: Failed to fetch data. Status code: ${response.statusCode}");
+        print("Response body: ${response.body}");
+        setState(() {
+          lineupData = {};
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load lineup data. Please try again later.')),
+        );
       }
-    } catch (e) {
-      print('An error occurred while fetching or parsing data: $e');
+    } else {
+      print("Error: Failed to fetch data. Status code: ${response.statusCode}");
+      throw Exception('Failed to load lineup data');
     }
   }
 
@@ -283,7 +299,9 @@ class _TeamLineupState extends State<TeamLineup> {
       ),
       body: lineupData.isNotEmpty
           ? buildLineupList()
-          : Center(child: CircularProgressIndicator()),
+          // : Center(child: CircularProgressIndicator(),),
+          : Center(child: Text("No lineup data available"),),
+          
     );
   }
 
@@ -292,19 +310,19 @@ class _TeamLineupState extends State<TeamLineup> {
       return Center(child: Text("No lineup data available"));
     }
 
-    var homePlayers = lineupData['home']['starting_lineups'] as List<dynamic>;
-    var awayPlayers = lineupData['away']['starting_lineups'] as List<dynamic>;
+    List<dynamic> homePlayers = lineupData['home']?['starting_lineups'] ?? [];
+    List<dynamic> awayPlayers = lineupData['away']?['starting_lineups'] ?? [];
 
     List<Widget> homeStarters = homePlayers.map((player) {
       return ListTile(
-        title: Text(player['lineup_player']),
+        title: Text(player['lineup_player'] ?? 'Unknown Player'),
         trailing: Text('Shirt number: ${player['lineup_number'] ?? 'N/A'}'),
       );
     }).toList();
 
     List<Widget> awayStarters = awayPlayers.map((player) {
       return ListTile(
-        title: Text(player['lineup_player']),
+        title: Text(player['lineup_player'] ?? 'Unknown Player'),
         trailing: Text('Shirt number: ${player['lineup_number'] ?? 'N/A'}'),
       );
     }).toList();

@@ -22,7 +22,7 @@ class FootballApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: Colors.white,
       ),
-      home: AuthWrapper(),
+      home: NavigationScreen(),
       debugShowCheckedModeBanner: false,
     );
   }

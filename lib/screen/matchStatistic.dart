@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:uas_ppb/screen/teamStatistic.dart'; // Ensure this is the correct path
+import 'package:uas_ppb/screen/teamSummary.dart'; // Ensure this is the correct path
 
-class MatchStatisticScreen extends StatelessWidget {
+class MatchStatisticScreen extends StatefulWidget {
   final Map<String, dynamic> matchData;
   final bool isFullStatistics;
 
@@ -10,11 +12,46 @@ class MatchStatisticScreen extends StatelessWidget {
   });
 
   @override
+  _MatchStatisticScreenState createState() => _MatchStatisticScreenState();
+}
+
+class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
+  Widget? currentContent;
+
+  @override
+  void initState() {
+    super.initState();
+    // Set default content
+    currentContent = widget.isFullStatistics ? TeamStatsTable(statistics: widget.matchData['statistics']) : Text("Select an option from the menu");
+  }
+
+  void updateContent(String title) {
+    Widget newContent;
+    switch (title) {
+      case 'Match Summary':
+        newContent = TeamSummary(matchData: widget.matchData);
+        break;
+      case 'Statistics':
+        newContent = TeamStatsTable(statistics: widget.matchData['statistics']);
+        break;
+      default:
+        newContent = Text("No data available for $title");
+        break;
+    }
+
+    if (currentContent != newContent) {
+      setState(() {
+        currentContent = newContent;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          '${matchData["homeTeam"]} vs ${matchData["awayTeam"]}',
+          '${widget.matchData["homeTeam"]} vs ${widget.matchData["awayTeam"]}',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
@@ -25,19 +62,7 @@ class MatchStatisticScreen extends StatelessWidget {
             _buildMatchHeader(),
             _buildMenuBox(),
             SizedBox(height: 10.0),
-            Card(
-              elevation: 4,
-              margin: EdgeInsets.symmetric(horizontal: 16.0),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.0),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: isFullStatistics
-                    ? _buildStatisticsTable(matchData['statistics'])
-                    : _buildPartialStatistics(matchData['statistics']),
-              ),
-            ),
+            currentContent ?? Center(child: Text("Please select an option from the menu")),
           ],
         ),
       ),
@@ -53,21 +78,21 @@ class MatchStatisticScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildTeamColumn(matchData["homeTeam"], matchData["homeScore"]),
+          _buildTeamColumn(widget.matchData["homeTeam"], widget.matchData["homeScore"]),
           Column(
             children: [
               Text(
-                matchData["status"],
+                widget.matchData["status"],
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               SizedBox(height: 4),
               Text(
-                'Stadium: ${matchData["stadium"]}',
+                'Stadium: ${widget.matchData["stadium"]}',
                 style: TextStyle(fontSize: 14, color: Colors.grey[700]),
               ),
             ],
           ),
-          _buildTeamColumn(matchData["awayTeam"], matchData["awayScore"]),
+          _buildTeamColumn(widget.matchData["awayTeam"], widget.matchData["awayScore"]),
         ],
       ),
     );
@@ -109,6 +134,7 @@ class MatchStatisticScreen extends StatelessWidget {
           _buildMenuButton('Match Summary'),
           _buildMenuButton('Lineups'),
           _buildMenuButton('Standing'),
+          _buildMenuButton('Statistics'),
         ],
       ),
     );
@@ -116,9 +142,7 @@ class MatchStatisticScreen extends StatelessWidget {
 
   Widget _buildMenuButton(String title) {
     return ElevatedButton(
-      onPressed: () {
-        // Implement navigation logic or content toggle here
-      },
+      onPressed: () => updateContent(title),
       child: Text(
         title,
         style: TextStyle(fontSize: 14),
@@ -129,79 +153,5 @@ class MatchStatisticScreen extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
       ),
     );
-  }
-
-  Widget _buildStatisticsTable(Map<String, dynamic> statistics) {
-    if (statistics.isEmpty) {
-      return Center(
-        child: Text(
-          "No statistics available.",
-          style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
-        ),
-      );
-    }
-
-    return Table(
-      columnWidths: const {
-        0: FlexColumnWidth(1),
-        1: FlexColumnWidth(3),
-        2: FlexColumnWidth(1),
-      },
-      border: TableBorder.all(color: Colors.grey.shade300),
-      children: statistics.entries.map((entry) {
-        return TableRow(
-          decoration: BoxDecoration(
-            color: entry.key.contains("Goal")
-                ? Colors.yellow.withOpacity(0.2)
-                : Colors.transparent,
-          ),
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Text(
-                entry.value["home"].toString(),
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Text(
-                entry.key,
-                textAlign: TextAlign.center,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Text(
-                entry.value["away"].toString(),
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14),
-              ),
-            ),
-          ],
-        );
-      }).toList(),
-    );
-  }
-
-  Widget _buildPartialStatistics(Map<String, dynamic> statistics) {
-    final keysToShow = ['Shots Total', 'Ball Possession'];
-    final filteredStats = statistics.entries
-        .where((entry) => keysToShow.contains(entry.key))
-        .toList();
-
-    if (filteredStats.isEmpty) {
-      return Center(
-        child: Text(
-          "No partial statistics available.",
-          style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
-        ),
-      );
-    }
-
-    return _buildStatisticsTable(
-        Map.fromEntries(filteredStats)); // Reuse the table method
   }
 }

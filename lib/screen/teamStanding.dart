@@ -16,3 +16,4 @@ class StandingsPage extends StatelessWidget {
     );
   }
 }
+

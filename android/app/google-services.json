@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "392821293172",
+    "project_id": "soccer-match-9c130",
+    "storage_bucket": "soccer-match-9c130.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:392821293172:android:85201ee679d47f9228d121",
+        "android_client_info": {
+          "package_name": "com.example.uas_ppb"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB1lxWzvxPd99if5-JMdek59wa5F8HWzLE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

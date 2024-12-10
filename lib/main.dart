@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:uas_ppb/drawer/appDrawer.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'pages/login_page.dart';
+import 'drawer/appDrawer.dart';
 import 'pages/selectMatches.dart';
 import 'pages/favoritesTeam.dart';
 import 'screen/resultMatches.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // Inisialisasi Firebase
   runApp(FootballApp());
 }
 
@@ -15,10 +20,28 @@ class FootballApp extends StatelessWidget {
       title: 'Football App',
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.white, // Make scaffold background transparent
+        scaffoldBackgroundColor: Colors.white,
       ),
-      home: NavigationScreen(),
+      home: AuthWrapper(),
       debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class AuthWrapper extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasData) {
+          return NavigationScreen(); // Halaman utama jika sudah login
+        } else {
+          return LoginPage(); // Halaman login jika belum login
+        }
+      },
     );
   }
 }
@@ -31,17 +54,17 @@ class NavigationScreen extends StatelessWidget {
         title: Text(
           'Football Match App',
           style: TextStyle(
-            color: const Color.fromRGBO(27, 31, 43, 1), // Change the text color here
+            color: const Color.fromRGBO(27, 31, 43, 1),
           ),
         ),
-        backgroundColor: Colors.transparent, // Make the app bar transparent
-        elevation: 0, // Remove shadow for a clean look
+        backgroundColor: Colors.transparent,
+        elevation: 0,
       ),
       drawer: AppDrawer(),
       body: Container(
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('images/background/home_bg.jpg'), // Replace with your image path
+            image: AssetImage('images/background/home_bg.jpg'),
             fit: BoxFit.cover,
           ),
         ),
@@ -53,7 +76,9 @@ class NavigationScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) =>  SelectMatchesScreen(matchType: 'recent')),
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            SelectMatchesScreen(matchType: 'recent')),
                   );
                 },
                 child: Text('View Recent Matches'),
@@ -71,10 +96,18 @@ class NavigationScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => SelectMatchesScreen(matchType: 'result')),
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            SelectMatchesScreen(matchType: 'result')),
                   );
                 },
                 child: Text('View Match Results'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut(); // Logout
+                },
+                child: Text('Logout'),
               ),
             ],
           ),

@@ -198,6 +198,7 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
                                             "stadium": match['match_stadium'] ?? 'Unknown',
                                             "statistics": formattedStatistics,
                                             "matchId": match['match_id'], // Pass match_id correctly
+                                            "leagueId": widget.leagueId,  // Ensure this is the correct league ID
                                           },
                                           isFullStatistics: true,
                                         ),

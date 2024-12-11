@@ -44,34 +44,41 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
   }
 
   Future<void> _fetchLogos() async {
-      const apiKey = '5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192';  // Replace with your actual API key
-      int leagueId = widget.matchData['leagueId'];
-      var url = Uri.parse('https://apiv3.apifootball.com/?action=get_teams&league_id=$leagueId&APIkey=$apiKey');
+    const apiKey = '5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192';  // Replace with your actual API key
+    final url = Uri.parse('https://apiv3.apifootball.com/?action=get_teams&league_id=${widget.matchData['leagueId']}&APIkey=$apiKey');
 
-      try {
-        var response = await http.get(url);
-        if (response.statusCode == 200) {
-          var data = json.decode(response.body);
-          print(data);  // Check the full API response structure
-          var homeTeamData = data.firstWhere((team) => team['team_key'].toString() == widget.matchData['homeTeamId'], orElse: () => null);
-          var awayTeamData = data.firstWhere((team) => team['team_key'].toString() == widget.matchData['awayTeamId'], orElse: () => null);
-
-          if (homeTeamData != null && awayTeamData != null) {
-            setState(() {
-              homeLogoUrl = homeTeamData['team_badge'];
-              awayLogoUrl = awayTeamData['team_badge'];
-            });
-          } else {
-            print('Team data not found in API response');
-          }
-        } else {
-          print('Failed to load data from API with status code: ${response.statusCode}');
-        }
-      } catch (e) {
-        print('Error fetching logos: $e');
+    try {
+      var response = await http.get(url);
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        print(data);  // Check what the API returns
+        setState(() {
+          homeLogoUrl = _findTeamLogo(data, widget.matchData['homeTeam']);
+          awayLogoUrl = _findTeamLogo(data, widget.matchData['awayTeam']);
+        });
+        print('Home Logo: $homeLogoUrl');  // See what URL is set for home
+        print('Away Logo: $awayLogoUrl');  // See what URL is set for away
+      } else {
+        print('Failed to load team logos from API with status code: ${response.statusCode}');
       }
+    } catch (e) {
+      print('Error fetching team logos: $e');
+    }
   }
 
+
+  String? _findTeamLogo(List<dynamic> teams, String teamName) {
+      print("Searching for logo of team: $teamName");
+      for (var team in teams) {
+          print("Checking team from API: ${team['team_name']}");
+          if (team['team_name'].toString().toLowerCase() == teamName.toLowerCase()) {
+              print("Match found. Badge URL: ${team['team_badge']}");
+              return team['team_badge'];
+          }
+      }
+      print("No match found for team: $teamName");
+      return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,27 +98,30 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
   }
 
   Widget _buildMatchHeader() {
-    return Container(
-      padding: EdgeInsets.all(16.0),
-      decoration: BoxDecoration(color: Colors.blueAccent.withOpacity(0.1)),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Expanded(child: _buildTeamScoreColumn(widget.matchData["homeTeam"], widget.matchData["homeScore"], homeLogoUrl)),
-              Text("vs", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-              Expanded(child: _buildTeamScoreColumn(widget.matchData["awayTeam"], widget.matchData["awayScore"], awayLogoUrl)),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text('Stadium: ${widget.matchData["stadium"]}', style: TextStyle(fontSize: 14, color: Colors.grey[700]), textAlign: TextAlign.center),
-          ),
-        ],
-      ),
-    );
+      return Container(
+        padding: EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.blueAccent.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Expanded(child: _buildTeamScoreColumn(widget.matchData["homeTeam"], widget.matchData["homeScore"], homeLogoUrl)),
+                Text("vs", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+                Expanded(child: _buildTeamScoreColumn(widget.matchData["awayTeam"], widget.matchData["awayScore"], awayLogoUrl)),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8.0),
+              child: Text('Stadium: ${widget.matchData["stadium"]}', style: TextStyle(fontSize: 16, color: Colors.grey[700]), textAlign: TextAlign.center),
+            ),
+          ],
+        ),
+      );
   }
 
   void updateContent(String title) {
@@ -141,20 +151,22 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
     });
   }
 
+
   Widget _buildTeamScoreColumn(String team, int score, String? logoUrl) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (logoUrl != null) 
-        Image.network(
-          logoUrl, 
-          width: 50, 
-          height: 50, 
-          fit: BoxFit.cover,
-          errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
-            return Text('😢');  // Indicates an error with loading the image
-          },
-        ),
+        if (logoUrl != null)
+          Image.network(
+            logoUrl,
+            width: 50,
+            height: 50,
+            fit: BoxFit.cover,
+            errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
+              print('Failed to load image: $logoUrl');
+              return Icon(Icons.broken_image);  // More explicit icon for loading failure
+            },
+          ),
         SizedBox(height: 8),
         Text(team, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
         Text('Score: $score', style: TextStyle(fontSize: 16, color: Colors.grey[700]), textAlign: TextAlign.center),
@@ -163,22 +175,77 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
   }
 
   Widget _buildMenuBox() {
-    return Container(
-      margin: EdgeInsets.symmetric(vertical: 10.0),
-      padding: EdgeInsets.symmetric(vertical: 12.0),
-      decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6.0, offset: Offset(0, 2))]),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: ['Match Summary', 'Lineups', 'Statistics', 'Standings'].map((title) => _buildMenuButton(title)).toList(),
-      ),
-    );
+      return Container(
+        margin: EdgeInsets.all(10), // Provides clear space around the container
+        padding: EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.white, // Neutral background color to emphasize buttons
+          borderRadius: BorderRadius.circular(15), // Smoothly rounded corners
+          boxShadow: [ // Subtle shadow for a raised effect
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              spreadRadius: 1,
+              blurRadius: 10,
+              offset: Offset(0, 5),
+            )
+          ],
+        ),
+        child: SingleChildScrollView( // Ensures the container can scroll horizontally if space is tight
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: ['Match Summary', 'Lineups', 'Statistics', 'Standings']
+                .map((title) => Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4), // Ensures space between buttons
+                  child: _buildMenuButton(title),
+                ))
+                .toList(),
+          ),
+        ),
+      );
   }
 
   Widget _buildMenuButton(String title) {
     return ElevatedButton(
       onPressed: () => updateContent(title),
-      child: Text(title, style: TextStyle(fontSize: 14)),
-      style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0)),
+      child: Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blue.shade300, // Vibrant background color
+        foregroundColor: Colors.white, // Text color for readability
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      ),
     );
   }
+
+  //Sebelum diganti
+  // Widget _buildMenuButton(String title) {
+  //   return ElevatedButton(
+  //     onPressed: () => updateContent(title),
+  //     child: Text(title, style: TextStyle(fontSize: 16)),
+  //     style: ElevatedButton.styleFrom(
+  //       backgroundColor: Colors.blueAccent, // button background color
+  //       foregroundColor: Colors.white, // button text color
+  //       elevation: 5, // button shadow elevation
+  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+  //       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+  //     ),
+  //   );
+  // }
+
+  // Widget _buildMenuButton(String title) {
+  //   return ElevatedButton(
+  //     onPressed: () => updateContent(title),
+  //     child: Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+  //     style: ElevatedButton.styleFrom(
+  //       backgroundColor: Colors.blue.shade300, // Button background color
+  //       foregroundColor: Colors.white, // Button text color
+  //       elevation: 4, // Shadow elevation
+  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+  //       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+  //     ),
+  //   );
+  // }
+
 }

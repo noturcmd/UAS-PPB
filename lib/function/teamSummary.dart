@@ -23,15 +23,13 @@ class _TeamSummaryState extends State<TeamSummary> {
 
   Future<void> fetchMatchDetails() async {
     String apiUrl = 'https://apiv3.apifootball.com';
-    String apiKey = '5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192';
+    String apiKey = '5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192'; // Replace with your actual API key
     final url = "$apiUrl/?action=get_events&match_id=${widget.matchId}&APIkey=$apiKey";
 
     try {
       var response = await http.get(Uri.parse(url));
-
       if (response.statusCode == 200) {
         List<dynamic> data = json.decode(response.body);
-
         if (data.isNotEmpty) {
           setState(() {
             matchDetails = data[0];
@@ -62,7 +60,7 @@ class _TeamSummaryState extends State<TeamSummary> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Match Summary"),
-        automaticallyImplyLeading: false, // This will remove the back button
+        automaticallyImplyLeading: false,
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
@@ -72,30 +70,44 @@ class _TeamSummaryState extends State<TeamSummary> {
 
   Widget buildMatchDetails() {
     List<dynamic> goalscorers = matchDetails['goalscorer'] ?? [];
-    String referee = matchDetails['match_referee'] ?? 'Unknown';
-    String stadium = matchDetails['match_stadium'] ?? 'Unknown Stadium';
+    List<dynamic> cards = matchDetails['cards'] ?? [];
+    Map<String, dynamic> substitutions = matchDetails['substitutions'] ?? {};
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "${matchDetails['match_hometeam_name']} vs ${matchDetails['match_awayteam_name']}",
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 10),
-          Text("Score: ${matchDetails['match_hometeam_score']} - ${matchDetails['match_awayteam_score']}"),
-          Text("Stadium: $stadium"),
-          Text("Referee: $referee"),
-          Divider(),
-          Text("Goals:", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          ...goalscorers.map<Widget>((goal) => ListTile(
-            title: Text("${goal['time']}' ${goal['home_scorer'] ?? goal['away_scorer']}"),
-            subtitle: Text("Assist: ${goal['home_assist'] ?? goal['away_assist']}"),
-          )),
+          buildEventSection("1st Half", goalscorers, cards, substitutions['home'] ?? [], substitutions['away'] ?? [], true),
+          buildEventSection("2nd Half", goalscorers, cards, substitutions['home'] ?? [], substitutions['away'] ?? [], false),
         ],
       ),
+    );
+  }
+
+  Widget buildEventSection(String title, List<dynamic> goals, List<dynamic> cards, List<dynamic> homeSubs, List<dynamic> awaySubs, bool isFirstHalf) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
+        ...goals.where((g) => isFirstHalf ? g['time'].endsWith("1") : g['time'].endsWith("2")).map<Widget>((goal) => ListTile(
+          title: Text("${goal['time']}' ${goal['home_scorer'] ?? goal['away_scorer']} (Goal)"),
+          subtitle: Text("Assist: ${goal['home_assist'] ?? goal['away_assist']}"),
+          leading: Icon(Icons.sports_soccer, color: Colors.green),
+        )),
+        ...cards.where((c) => isFirstHalf ? c['time'].endsWith("1") : c['time'].endsWith("2")).map<Widget>((card) => ListTile(
+          title: Text("${card['time']}' ${card['home_fault'] ?? card['away_fault']} (Card)"),
+          leading: Icon(Icons.warning, color: Colors.yellow),
+        )),
+        ...homeSubs.map<Widget>((sub) => ListTile(
+          title: Text("${sub['time']}' ${sub['substitution']} (Sub)"),
+          leading: Icon(Icons.sync, color: Colors.blue),
+        )),
+        ...awaySubs.map<Widget>((sub) => ListTile(
+          title: Text("${sub['time']}' ${sub['substitution']} (Sub)"),
+          leading: Icon(Icons.sync, color: Colors.blue),
+        )),
+      ],
     );
   }
 }

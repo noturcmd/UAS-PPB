@@ -1,221 +1,184 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:uas_ppb/screen/matchStatistic.dart';
+import 'dart:convert';
 
-class LeagueResultScreen extends StatefulWidget {
-  final String leagueName;
-  final String leagueId;
+import 'package:uas_ppb/function/teamLineup.dart';
+import 'package:uas_ppb/function/teamStanding.dart';
+import 'package:uas_ppb/function/teamStatsTable.dart';
+import 'package:uas_ppb/function/teamSummary.dart';
 
-  const LeagueResultScreen({
-    required this.leagueName,
-    required this.leagueId,
+class MatchStatisticScreen extends StatefulWidget {
+  final Map<String, dynamic> matchData;
+  final bool isFullStatistics;
+
+  MatchStatisticScreen({
+    required this.matchData,
+    required this.isFullStatistics,
   });
 
   @override
-  _LeagueResultScreenState createState() => _LeagueResultScreenState();
+  _MatchStatisticScreenState createState() => _MatchStatisticScreenState();
 }
 
-class _LeagueResultScreenState extends State<LeagueResultScreen> {
-  List<dynamic> allMatches = [];
-  List<dynamic> filteredMatches = [];
-  List<String> matchDates = [];
-  String selectedDate = '';
-  bool isLoading = true;
+class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
+  Widget? currentContent;
+  String? homeLogoUrl;
+  String? awayLogoUrl;
 
   @override
   void initState() {
     super.initState();
-    fetchLeagueResults();
+    _fetchLogos();
+    currentContent = widget.isFullStatistics
+        ? TeamStatsTable(statistics: widget.matchData['statistics'] ?? {})
+        : Center(child: Text("Select an option from the menu"));
   }
 
-  Future<void> fetchLeagueResults() async {
-    const String apiUrl = "https://apiv3.apifootball.com";
-    const String apiKey = "YOUR_API_KEY"; // Replace with your actual API key
-
-    DateTime now = DateTime.now();
-    String weekAgo = now.subtract(Duration(days: 7)).toString().split(' ')[0];
-    String today = "${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)}";
-
-    final url = Uri.parse(
-        '$apiUrl/?action=get_events&from=$weekAgo&to=$today&league_id=${widget.leagueId}&APIkey=$apiKey');
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      var data = json.decode(response.body);
-      setState(() {
-        allMatches = data;
-        matchDates = _extractUniqueMatchDates(data);
-        if (matchDates.isNotEmpty) {
-          selectedDate = matchDates[0]; // Default to the earliest match date
-          filterMatchesByDate(selectedDate);
-        }
-        isLoading = false;
-      });
-    } else {
-      setState(() {
-        isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${response.reasonPhrase}')),
-      );
+  int getMatchId() {
+    try {
+      return int.parse(widget.matchData['matchId'].toString());
+    } catch (e) {
+      print('Error parsing match ID: $e');
+      return -1; // Return a default or error code
     }
   }
 
-  String _twoDigits(int n) => n.toString().padLeft(2, '0');
+  Future<void> _fetchLogos() async {
+      const apiKey = '5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192';  // Replace with your actual API key
+      int leagueId = widget.matchData['leagueId'];
+      var url = Uri.parse('https://apiv3.apifootball.com/?action=get_teams&league_id=$leagueId&APIkey=$apiKey');
 
-  List<String> _extractUniqueMatchDates(List<dynamic> matches) {
-    final dates = matches.map<String>((match) => match['match_date'] as String).toSet().toList();
-    dates.sort((a, b) => b.compareTo(a)); // Sort in descending order for past matches
-    return dates;
+      try {
+        var response = await http.get(url);
+        if (response.statusCode == 200) {
+          var data = json.decode(response.body);
+          print(data);  // Check the full API response structure
+          var homeTeamData = data.firstWhere((team) => team['team_key'].toString() == widget.matchData['homeTeamId'], orElse: () => null);
+          var awayTeamData = data.firstWhere((team) => team['team_key'].toString() == widget.matchData['awayTeamId'], orElse: () => null);
+
+          if (homeTeamData != null && awayTeamData != null) {
+            setState(() {
+              homeLogoUrl = homeTeamData['team_badge'];
+              awayLogoUrl = awayTeamData['team_badge'];
+            });
+          } else {
+            print('Team data not found in API response');
+          }
+        } else {
+          print('Failed to load data from API with status code: ${response.statusCode}');
+        }
+      } catch (e) {
+        print('Error fetching logos: $e');
+      }
   }
 
-  void filterMatchesByDate(String date) {
-    setState(() {
-      filteredMatches = allMatches.where((match) => match['match_date'] == date).toList();
-    });
-  }
-
-  Future<void> _refreshData() async {
-    setState(() {
-      isLoading = true;
-    });
-    await fetchLeagueResults();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.leagueName} Results'),
+        title: Text('${widget.matchData["homeTeam"]} vs ${widget.matchData["awayTeam"]}', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
-      body: isLoading
-          ? Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                // Date selector
-                if (matchDates.isNotEmpty)
-                  Container(
-                    height: 60,
-                    color: Colors.grey[200],
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: matchDates.length,
-                      itemBuilder: (context, index) {
-                        String date = matchDates[index];
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedDate = date;
-                              filterMatchesByDate(date);
-                            });
-                          },
-                          child: Container(
-                            margin: EdgeInsets.symmetric(horizontal: 8.0, vertical: 10.0),
-                            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-                            decoration: BoxDecoration(
-                              color: selectedDate == date ? Colors.blue : Colors.lightBlueAccent,
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
-                            child: Center(
-                              child: Text(
-                                index == 0 ? 'Today' : date.split('-').reversed.join('.'),
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                // Match list
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: _refreshData,
-                    child: filteredMatches.isEmpty
-                        ? Center(
-                            child: Text(
-                              'No results available for $selectedDate.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 16),
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: filteredMatches.length,
-                            itemBuilder: (context, index) {
-                              var match = filteredMatches[index];
-                              return ListTile(
-                                leading: match['team_home_badge'] != null ? Image.network(match['team_home_badge']) : null,
-                                title: Text(
-                                  '${match['match_hometeam_name']} vs ${match['match_awayteam_name']}',
-                                  style: TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                                subtitle: Text('Kick-off at ${match['match_time']}'),
-                                trailing: Icon(Icons.arrow_forward),
-                                onTap: () async {
-                                  final String apiUrl = "https://apiv3.apifootball.com";
-                                  final String apiKey = "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192"; // Replace with your API key
-                                  final matchId = match['match_id']; // Get match ID from the selected match
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildMatchHeader(),
+          _buildMenuBox(),
+          Expanded(child: currentContent ?? Center(child: Text("Please select an option from the menu"))),
+        ],
+      ),
+    );
+  }
 
-                                  // Fetch statistics for the selected match
-                                  final url = Uri.parse('$apiUrl/?action=get_statistics&match_id=$matchId&APIkey=$apiKey');
-                                  final response = await http.get(url);
+  Widget _buildMatchHeader() {
+    return Container(
+      padding: EdgeInsets.all(16.0),
+      decoration: BoxDecoration(color: Colors.blueAccent.withOpacity(0.1)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Expanded(child: _buildTeamScoreColumn(widget.matchData["homeTeam"], widget.matchData["homeScore"], homeLogoUrl)),
+              Text("vs", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+              Expanded(child: _buildTeamScoreColumn(widget.matchData["awayTeam"], widget.matchData["awayScore"], awayLogoUrl)),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text('Stadium: ${widget.matchData["stadium"]}', style: TextStyle(fontSize: 14, color: Colors.grey[700]), textAlign: TextAlign.center),
+          ),
+        ],
+      ),
+    );
+  }
 
-                                  if (response.statusCode == 200) {
-                                    final data = json.decode(response.body);
-                                    final statisticsData = data[matchId.toString()]?['statistics'] ?? []; // Fetch the statistics array
+  void updateContent(String title) {
+    setState(() {
+      switch (title) {
+        case 'Match Summary':
+          currentContent = TeamSummary(matchId: getMatchId());
+          break;
+        case 'Statistics':
+          currentContent = TeamStatsTable(statistics: widget.matchData['statistics'] ?? {});
+          break;
+        case 'Lineups':
+          int matchId = getMatchId();
+          if (matchId != -1) {
+            currentContent = TeamLineup(matchId: matchId);
+          } else {
+            currentContent = Center(child: Text("Invalid match ID"));
+          }
+          break;
+        case 'Standings':
+          currentContent = LeagueStandings(leagueId: int.tryParse(widget.matchData['leagueId'].toString()) ?? 0);
+          break;
+        default:
+          currentContent = Center(child: Text("No data available for $title"));
+          break;
+      }
+    });
+  }
 
-                                    // Transform statistics into Map<String, dynamic> format
-                                    final Map<String, dynamic> formattedStatistics = {};
-                                    for (var stat in statisticsData) {
-                                      if (stat is Map<String, dynamic> &&
-                                          stat.containsKey('type') &&
-                                          stat.containsKey('home') &&
-                                          stat.containsKey('away')) {
-                                        formattedStatistics[stat['type']] = {
-                                          "home": stat['home'] ?? "0",
-                                          "away": stat['away'] ?? "0",
-                                        };
-                                      }
-                                    }
+  Widget _buildTeamScoreColumn(String team, int score, String? logoUrl) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (logoUrl != null) 
+        Image.network(
+          logoUrl, 
+          width: 50, 
+          height: 50, 
+          fit: BoxFit.cover,
+          errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
+            return Text('😢');  // Indicates an error with loading the image
+          },
+        ),
+        SizedBox(height: 8),
+        Text(team, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+        Text('Score: $score', style: TextStyle(fontSize: 16, color: Colors.grey[700]), textAlign: TextAlign.center),
+      ],
+    );
+  }
 
-                                    // Navigate to MatchStatisticScreen with full statistics
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => MatchStatisticScreen(
-                                          matchData: {
-                                            "homeTeam": match['match_hometeam_name'] ?? "Unknown",
-                                            "awayTeam": match['match_awayteam_name'] ?? "Unknown",
-                                            "homeScore": int.tryParse(match['match_hometeam_score'] ?? "0") ?? 0,
-                                            "awayScore": int.tryParse(match['match_awayteam_score'] ?? "0") ?? 0,
-                                            "status": match['match_status'] ?? 'Finished',
-                                            "stadium": match['match_stadium'] ?? 'Unknown',
-                                            "statistics": formattedStatistics,
-                                            "matchId": match['match_id'], // Pass match_id correctly
-                                            "leagueId": widget.leagueId,  // Ensure this is the correct league ID
-                                          },
-                                          isFullStatistics: true,
-                                        ),
-                                      ),
-                                    );
-                                  } else {
-                                    // Handle errors
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Error fetching statistics: ${response.reasonPhrase}')),
-                                    );
-                                  }
-                                },
-                              );
-                            },
-                          ),
-                  ),
-                ),
-              ],
-            ),
+  Widget _buildMenuBox() {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 10.0),
+      padding: EdgeInsets.symmetric(vertical: 12.0),
+      decoration: BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6.0, offset: Offset(0, 2))]),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: ['Match Summary', 'Lineups', 'Statistics', 'Standings'].map((title) => _buildMenuButton(title)).toList(),
+      ),
+    );
+  }
+
+  Widget _buildMenuButton(String title) {
+    return ElevatedButton(
+      onPressed: () => updateContent(title),
+      child: Text(title, style: TextStyle(fontSize: 14)),
+      style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent, foregroundColor: Colors.white, padding: EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0)),
     );
   }
 }

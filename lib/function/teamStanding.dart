@@ -53,16 +53,68 @@ class _LeagueStandingsState extends State<LeagueStandings> {
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: standings.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  leading: Image.network(standings[index]["team_badge"]),
-                  title: Text(standings[index]["team_name"]),
-                  subtitle: Text("Position: ${standings[index]["overall_league_position"]} - Points: ${standings[index]["overall_league_PTS"]}"),
-                  trailing: Text("Played: ${standings[index]["overall_league_payed"]}"),
-                );
-              },
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: standings.length,
+                      itemBuilder: (context, index) {
+                        return Card(
+                          margin: EdgeInsets.symmetric(vertical: 8.0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          elevation: 3,
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundImage: NetworkImage(standings[index]["team_badge"] ?? ""),
+                              radius: 25,
+                              backgroundColor: Colors.grey[200],
+                            ),
+                            title: Text(
+                              standings[index]["team_name"] ?? "Unknown Team",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            subtitle: Text(
+                              "Position: ${standings[index]["overall_league_position"]} - Points: ${standings[index]["overall_league_PTS"]}",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "Played",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                                Text(
+                                  standings[index]["overall_league_payed"]?.toString() ?? "0",
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
     );
   }

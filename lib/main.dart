@@ -51,13 +51,14 @@ class NavigationScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        iconTheme: IconThemeData(color: Colors.white),
         title: Text(
           'Football Match App',
           style: TextStyle(
-            color: const Color.fromRGBO(27, 31, 43, 1),
+            color: const Color.fromRGBO(255, 255, 255, 1),
           ),
         ),
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.black,
         elevation: 0,
       ),
       drawer: AppDrawer(),

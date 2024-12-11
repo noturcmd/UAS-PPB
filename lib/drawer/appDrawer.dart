@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:uas_ppb/main.dart';
 import '../pages/selectMatches.dart';
 import '../pages/favoritesTeam.dart';
+import '../pages/login_page.dart';
+
 
 class AppDrawer extends StatelessWidget {
   @override
@@ -12,7 +14,7 @@ class AppDrawer extends StatelessWidget {
         children: [
           DrawerHeader(
             decoration: BoxDecoration(
-              color: Colors.blue,
+              color: Colors.black,
             ),
             child: Text(
               'Football Menu',
@@ -60,6 +62,16 @@ class AppDrawer extends StatelessWidget {
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => SelectMatchesScreen(matchType: 'result')),
+              );
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.login),
+            title: Text('Login/Register'),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => LoginPage()),
               );
             },
           ),

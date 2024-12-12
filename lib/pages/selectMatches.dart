@@ -66,7 +66,7 @@ class _SelectMatchesScreenState extends State<SelectMatchesScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.matchType == 'recent'
-            ? 'Select League for Recent Matches'
+            ? 'Select League for Upcoming Matches'
             : 'Select League for Result Matches'),
       ),
       drawer: AppDrawer(),

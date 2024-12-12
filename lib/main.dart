@@ -77,7 +77,7 @@ class NavigationScreen extends StatelessWidget {
               children: [
                 _buildButton(
                   context,
-                  label: 'View Recent Matches',
+                  label: 'View Upcoming Matches',
                   icon: Icons.sports_soccer,
                   onPressed: () {
                     Navigator.push(

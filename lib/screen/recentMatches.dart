@@ -153,80 +153,64 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
                             itemBuilder: (context, index) {
                               var match = filteredMatches[index];
                               DateTime jakartaTime = convertToJakartaTime(match['match_date'], match['match_time']);
-                              return 
-                              Card(
-                                margin: EdgeInsets.all(8.0),
-                                child: ListTile(
-                                  leading: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // Display home team logo or "No logo"
-                                      if (match['team_home_badge'] != null && match['team_home_badge'].isNotEmpty)
-                                        Image.network(
-                                          match['team_home_badge'],
-                                          width: 30,
-                                          height: 30,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Text('No', style: TextStyle(fontSize: 12, color: Colors.red)),
-                                                Text('logo', style: TextStyle(fontSize: 12, color: Colors.red)),
-                                              ],
-                                            );
-                                          },
-                                        )
-                                      else
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text('No', style: TextStyle(fontSize: 12, color: Colors.red)),
-                                            Text('logo', style: TextStyle(fontSize: 12, color: Colors.red)),
-                                          ],
-                                        ),
-
-                                      SizedBox(width: 10),
-
-                                      // Display away team logo or "No logo"
-                                      if (match['team_away_badge'] != null && match['team_away_badge'].isNotEmpty)
-                                        Image.network(
-                                          match['team_away_badge'],
-                                          width: 30,
-                                          height: 30,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) {
-                                            return Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Text('No', style: TextStyle(fontSize: 12, color: Colors.red)),
-                                                Text('logo', style: TextStyle(fontSize: 12, color: Colors.red)),
-                                              ],
-                                            );
-                                          },
-                                        )
-                                      else
-                                        Column(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text('No', style: TextStyle(fontSize: 12, color: Colors.red)),
-                                            Text('logo', style: TextStyle(fontSize: 12, color: Colors.red)),
-                                          ],
-                                        ),
-                                    ],
-                                  ),
-                                  title: Text(
-                                    '${match['match_hometeam_name']} vs ${match['match_awayteam_name']}',
-                                    style: TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Date: ${jakartaTime.toLocal().toIso8601String().split('T')[0]}'),
-                                      Text('Time: ${jakartaTime.hour.toString().padLeft(2, '0')}:${jakartaTime.minute.toString().padLeft(2, '0')} WIB'),
-                                      Text('Stadium: ${match['match_stadium'] ?? "Unknown"}'),
-                                      Text('Status: ${match['match_status']}'),
-                                    ],
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MatchStatisticScreen(
+                                        matchData: {
+                                          "homeTeam": match['match_hometeam_name'] ?? "Unknown",
+                                          "awayTeam": match['match_awayteam_name'] ?? "Unknown",
+                                          "homeScore": int.tryParse(match['match_hometeam_score'] ?? "0") ?? 0,
+                                          "awayScore": int.tryParse(match['match_awayteam_score'] ?? "0") ?? 0,
+                                          "status": match['match_status'] ?? 'Upcoming',
+                                          "stadium": match['match_stadium'] ?? 'Unknown',
+                                          "statistics": match['statistics'] ?? {},
+                                        },
+                                        isFullStatistics: false,
+                                      ),
+                                    ),
+                                  );
+                                },
+                                child: Card(
+                                  margin: EdgeInsets.all(8.0),
+                                  child: ListTile(
+                                    leading: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (match['team_home_badge'] != null &&
+                                            match['team_home_badge'].isNotEmpty)
+                                          Image.network(
+                                            match['team_home_badge'],
+                                            width: 30,
+                                          )
+                                        else
+                                          Text('No logo'),
+                                        SizedBox(width: 10),
+                                        if (match['team_away_badge'] != null &&
+                                            match['team_away_badge'].isNotEmpty)
+                                          Image.network(
+                                            match['team_away_badge'],
+                                            width: 30,
+                                          )
+                                        else
+                                          Text('No logo'),
+                                      ],
+                                    ),
+                                    title: Text(
+                                      '${match['match_hometeam_name']} vs ${match['match_awayteam_name']}',
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Date: ${jakartaTime.toLocal().toIso8601String().split('T')[0]}'),
+                                        Text('Time: ${jakartaTime.hour.toString().padLeft(2, '0')}:${jakartaTime.minute.toString().padLeft(2, '0')} WIB'),
+                                        Text('Stadium: ${match['match_stadium'] ?? "Unknown"}'),
+                                        Text('Status: ${match['match_status']}'),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               );

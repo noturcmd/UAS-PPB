@@ -218,34 +218,4 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
       ),
     );
   }
-
-  //Sebelum diganti
-  // Widget _buildMenuButton(String title) {
-  //   return ElevatedButton(
-  //     onPressed: () => updateContent(title),
-  //     child: Text(title, style: TextStyle(fontSize: 16)),
-  //     style: ElevatedButton.styleFrom(
-  //       backgroundColor: Colors.blueAccent, // button background color
-  //       foregroundColor: Colors.white, // button text color
-  //       elevation: 5, // button shadow elevation
-  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-  //       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-  //     ),
-  //   );
-  // }
-
-  // Widget _buildMenuButton(String title) {
-  //   return ElevatedButton(
-  //     onPressed: () => updateContent(title),
-  //     child: Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-  //     style: ElevatedButton.styleFrom(
-  //       backgroundColor: Colors.blue.shade300, // Button background color
-  //       foregroundColor: Colors.white, // Button text color
-  //       elevation: 4, // Shadow elevation
-  //       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-  //       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-  //     ),
-  //   );
-  // }
-
 }

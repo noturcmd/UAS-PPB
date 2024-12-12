@@ -30,35 +30,45 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
     fetchLeagueMatches();
   }
 
+  // Fetch matches for the selected league
   Future<void> fetchLeagueMatches() async {
     const String apiUrl = "https://apiv3.apifootball.com";
-    const String apiKey =
-        "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192"; // Replace with your actual API key
+    const String apiKey = "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192";
 
     DateTime now = DateTime.now();
     String today = "${now.year}-${_twoDigits(now.month)}-${_twoDigits(now.day)}";
+    String nextWeek = _getNextWeekDate();
 
     final url = Uri.parse(
-        '$apiUrl/?action=get_events&from=$today&to=${_getNextWeekDate()}&league_id=${widget.leagueId}&APIkey=$apiKey');
-    final response = await http.get(url);
+        '$apiUrl/?action=get_events&from=$today&to=$nextWeek&league_id=${widget.leagueId}&APIkey=$apiKey');
+    print('Fetching matches from: $url');
 
-    if (response.statusCode == 200) {
-      var data = json.decode(response.body);
-      setState(() {
-        allMatches = data;
-        matchDates = _extractUniqueMatchDates(data);
-        if (matchDates.isNotEmpty) {
-          selectedDate = matchDates[0];
-          filterMatchesByDate(selectedDate);
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        if (data is List) {
+          setState(() {
+            allMatches = data;
+            matchDates = _extractUniqueMatchDates(data);
+            if (matchDates.isNotEmpty) {
+              selectedDate = matchDates[0];
+              filterMatchesByDate(selectedDate);
+            }
+            isLoading = false;
+          });
+        } else {
+          print('Unexpected response format: $data');
+          setState(() => isLoading = false);
         }
-        isLoading = false;
-      });
-    } else {
-      setState(() {
-        isLoading = false;
-      });
+      } else {
+        throw Exception('Failed to load matches. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching matches: $e');
+      setState(() => isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${response.reasonPhrase}')),
+        SnackBar(content: Text('Error fetching matches: $e')),
       );
     }
   }
@@ -66,8 +76,7 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
   String _twoDigits(int n) => n.toString().padLeft(2, '0');
 
   String _getNextWeekDate() {
-    DateTime now = DateTime.now();
-    DateTime nextWeek = now.add(Duration(days: 7));
+    DateTime nextWeek = DateTime.now().add(Duration(days: 7));
     return "${nextWeek.year}-${_twoDigits(nextWeek.month)}-${_twoDigits(nextWeek.day)}";
   }
 
@@ -84,9 +93,7 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
   }
 
   Future<void> _refreshData() async {
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
     await fetchLeagueMatches();
   }
 
@@ -100,6 +107,7 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
           ? Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                // Date filter bar
                 if (matchDates.isNotEmpty)
                   Container(
                     height: 60,
@@ -125,7 +133,7 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
                             ),
                             child: Center(
                               child: Text(
-                                index == 0 ? 'Current Day' : date.split('-').reversed.join('.'),
+                                index == 0 ? 'Today' : date.split('-').reversed.join('.'),
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
@@ -137,6 +145,8 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
                       },
                     ),
                   ),
+
+                // Match list
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _refreshData,
@@ -152,7 +162,9 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
                             itemCount: filteredMatches.length,
                             itemBuilder: (context, index) {
                               var match = filteredMatches[index];
-                              DateTime jakartaTime = convertToJakartaTime(match['match_date'], match['match_time']);
+                              DateTime jakartaTime =
+                                  convertToJakartaTime(match['match_date'], match['match_time']);
+
                               return GestureDetector(
                                 onTap: () {
                                   Navigator.push(
@@ -166,7 +178,9 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
                                           "awayScore": int.tryParse(match['match_awayteam_score'] ?? "0") ?? 0,
                                           "status": match['match_status'] ?? 'Upcoming',
                                           "stadium": match['match_stadium'] ?? 'Unknown',
-                                          "statistics": match['statistics'] ?? {},
+                                          "statistics": match['statistics'] ?? {},                                       
+                                          "matchId": match['match_id'], // Pass match ID
+                                          "leagueId": widget.leagueId,  // Pass league ID
                                         },
                                         isFullStatistics: false,
                                       ),
@@ -181,19 +195,13 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
                                       children: [
                                         if (match['team_home_badge'] != null &&
                                             match['team_home_badge'].isNotEmpty)
-                                          Image.network(
-                                            match['team_home_badge'],
-                                            width: 30,
-                                          )
+                                          Image.network(match['team_home_badge'], width: 30)
                                         else
                                           Text('No logo'),
                                         SizedBox(width: 10),
                                         if (match['team_away_badge'] != null &&
                                             match['team_away_badge'].isNotEmpty)
-                                          Image.network(
-                                            match['team_away_badge'],
-                                            width: 30,
-                                          )
+                                          Image.network(match['team_away_badge'], width: 30)
                                         else
                                           Text('No logo'),
                                       ],

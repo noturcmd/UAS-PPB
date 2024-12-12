@@ -29,9 +29,10 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
     fetchLeagueResults();
   }
 
+  // Fetch match results for the selected league
   Future<void> fetchLeagueResults() async {
     const String apiUrl = "https://apiv3.apifootball.com";
-    const String apiKey = "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192"; // Replace with your actual API key
+    const String apiKey = "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192";
 
     DateTime now = DateTime.now();
     String weekAgo = now.subtract(Duration(days: 7)).toString().split(' ')[0];
@@ -39,25 +40,34 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
 
     final url = Uri.parse(
         '$apiUrl/?action=get_events&from=$weekAgo&to=$today&league_id=${widget.leagueId}&APIkey=$apiKey');
-    final response = await http.get(url);
+    print('Fetching league results from: $url');
 
-    if (response.statusCode == 200) {
-      var data = json.decode(response.body);
-      setState(() {
-        allMatches = data;
-        matchDates = _extractUniqueMatchDates(data);
-        if (matchDates.isNotEmpty) {
-          selectedDate = matchDates[0]; // Default to the earliest match date
-          filterMatchesByDate(selectedDate);
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        if (data is List) {
+          setState(() {
+            allMatches = data;
+            matchDates = _extractUniqueMatchDates(data);
+            if (matchDates.isNotEmpty) {
+              selectedDate = matchDates[0]; // Default to the earliest match date
+              filterMatchesByDate(selectedDate);
+            }
+            isLoading = false;
+          });
+        } else {
+          print('Unexpected response format: $data');
+          setState(() => isLoading = false);
         }
-        isLoading = false;
-      });
-    } else {
-      setState(() {
-        isLoading = false;
-      });
+      } else {
+        throw Exception('Failed to load results. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching results: $e');
+      setState(() => isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${response.reasonPhrase}')),
+        SnackBar(content: Text('Error fetching results: $e')),
       );
     }
   }
@@ -66,7 +76,7 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
 
   List<String> _extractUniqueMatchDates(List<dynamic> matches) {
     final dates = matches.map<String>((match) => match['match_date'] as String).toSet().toList();
-    dates.sort((a, b) => b.compareTo(a)); // Sort in descending order for past matches
+    dates.sort((a, b) => b.compareTo(a)); // Sort in descending order
     return dates;
   }
 
@@ -77,9 +87,7 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
   }
 
   Future<void> _refreshData() async {
-    setState(() {
-      isLoading = true;
-    });
+    setState(() => isLoading = true);
     await fetchLeagueResults();
   }
 
@@ -131,6 +139,7 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
                       },
                     ),
                   ),
+
                 // Match list
                 Expanded(
                   child: RefreshIndicator(
@@ -147,84 +156,37 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
                             itemCount: filteredMatches.length,
                             itemBuilder: (context, index) {
                               var match = filteredMatches[index];
-                              return Card(
-                                child: ListTile(
-                                  leading: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (match['team_home_badge'] != null)
-                                        Image.network(match['team_home_badge'], width: 30),
-                                      SizedBox(width: 10),
-                                      if (match['team_away_badge'] != null)
-                                        Image.network(match['team_away_badge'], width: 30),
-                                    ],
+
+                              return GestureDetector(
+                                onTap: () => _navigateToMatchStatistics(match),
+                                child: Card(
+                                  margin: EdgeInsets.all(8.0),
+                                  child: ListTile(
+                                    leading: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (match['team_home_badge'] != null &&
+                                            match['team_home_badge'].isNotEmpty)
+                                          Image.network(match['team_home_badge'], width: 30),
+                                        SizedBox(width: 10),
+                                        if (match['team_away_badge'] != null &&
+                                            match['team_away_badge'].isNotEmpty)
+                                          Image.network(match['team_away_badge'], width: 30),
+                                      ],
+                                    ),
+                                    title: Text(
+                                      '${match['match_hometeam_name']} vs ${match['match_awayteam_name']}',
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('Kick-off at ${match['match_time']}'),
+                                        Text('Stadium: ${match['match_stadium'] ?? "Unknown"}'),
+                                        Text('Status: ${match['match_status'] ?? "Finished"}'),
+                                      ],
+                                    ),
                                   ),
-                                  title: Text(
-                                    '${match['match_hometeam_name']} vs ${match['match_awayteam_name']}',
-                                    style: TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Kick-off at ${match['match_time']}'),
-                                      Text('Stadium: ${match['match_stadium'] ?? "Unknown"}'),
-                                      Text('Status: ${match['match_status'] ?? "Scheduled"}'),
-                                    ],
-                                  ),
-                                  onTap: () async {
-                                    final String apiUrl = "https://apiv3.apifootball.com";
-                                    final String apiKey = "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192"; // Replace with your API key
-                                    final matchId = match['match_id']; // Get match ID from the selected match
-
-                                    // Fetch statistics for the selected match
-                                    final url = Uri.parse('$apiUrl/?action=get_statistics&match_id=$matchId&APIkey=$apiKey');
-                                    final response = await http.get(url);
-
-                                    if (response.statusCode == 200) {
-                                      final data = json.decode(response.body);
-                                      final statisticsData = data[matchId.toString()]?['statistics'] ?? []; // Fetch the statistics array
-
-                                      // Transform statistics into Map<String, dynamic> format
-                                      final Map<String, dynamic> formattedStatistics = {};
-                                      for (var stat in statisticsData) {
-                                        if (stat is Map<String, dynamic> &&
-                                            stat.containsKey('type') &&
-                                            stat.containsKey('home') &&
-                                            stat.containsKey('away')) {
-                                          formattedStatistics[stat['type']] = {
-                                            "home": stat['home'] ?? "0",
-                                            "away": stat['away'] ?? "0",
-                                          };
-                                        }
-                                      }
-
-                                      // Navigate to MatchStatisticScreen with full statistics
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => MatchStatisticScreen(
-                                            matchData: {
-                                              "homeTeam": match['match_hometeam_name'] ?? "Unknown",
-                                              "awayTeam": match['match_awayteam_name'] ?? "Unknown",
-                                              "homeScore": int.tryParse(match['match_hometeam_score'] ?? "0") ?? 0,
-                                              "awayScore": int.tryParse(match['match_awayteam_score'] ?? "0") ?? 0,
-                                              "status": match['match_status'] ?? 'Finished',
-                                              "stadium": match['match_stadium'] ?? 'Unknown',
-                                              "statistics": formattedStatistics,
-                                              "matchId": match['match_id'], // Pass match_id correctly
-                                              "leagueId": widget.leagueId,  // Ensure this is the correct league ID
-                                            },
-                                            isFullStatistics: true,
-                                          ),
-                                        ),
-                                      );
-                                    } else {
-                                      // Handle errors
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text('Error fetching statistics: ${response.reasonPhrase}')),
-                                      );
-                                    }
-                                  },
                                 ),
                               );
                             },
@@ -234,5 +196,61 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
               ],
             ),
     );
+  }
+
+  void _navigateToMatchStatistics(dynamic match) async {
+    final String apiUrl = "https://apiv3.apifootball.com";
+    const String apiKey = "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192";
+    final matchId = match['match_id'];
+
+    try {
+      final url = Uri.parse('$apiUrl/?action=get_statistics&match_id=$matchId&APIkey=$apiKey');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final statisticsData = data[matchId.toString()]?['statistics'] ?? [];
+
+        final Map<String, dynamic> formattedStatistics = {};
+        for (var stat in statisticsData) {
+          if (stat is Map<String, dynamic> &&
+              stat.containsKey('type') &&
+              stat.containsKey('home') &&
+              stat.containsKey('away')) {
+            formattedStatistics[stat['type']] = {
+              "home": stat['home'] ?? "0",
+              "away": stat['away'] ?? "0",
+            };
+          }
+        }
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MatchStatisticScreen(
+              matchData: {
+                "homeTeam": match['match_hometeam_name'] ?? "Unknown",
+                "awayTeam": match['match_awayteam_name'] ?? "Unknown",
+                "homeScore": int.tryParse(match['match_hometeam_score'] ?? "0") ?? 0,
+                "awayScore": int.tryParse(match['match_awayteam_score'] ?? "0") ?? 0,
+                "status": match['match_status'] ?? 'Finished',
+                "stadium": match['match_stadium'] ?? 'Unknown',
+                "statistics": formattedStatistics,
+                "matchId": match['match_id'],
+                "leagueId": widget.leagueId,
+              },
+              isFullStatistics: true,
+            ),
+          ),
+        );
+      } else {
+        throw Exception('Failed to load statistics. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching statistics: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching statistics: $e')),
+      );
+    }
   }
 }

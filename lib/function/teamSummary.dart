@@ -64,7 +64,9 @@ class _TeamSummaryState extends State<TeamSummary> {
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
-          : matchDetails.isNotEmpty ? buildMatchDetails() : Center(child: Text("No Match Data Available")),
+          : matchDetails.isNotEmpty
+              ? buildMatchDetails()
+              : Center(child: Text("No Match Data Available")),
     );
   }
 
@@ -78,36 +80,90 @@ class _TeamSummaryState extends State<TeamSummary> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          buildEventSection("1st Half", goalscorers, cards, substitutions['home'] ?? [], substitutions['away'] ?? [], true),
-          buildEventSection("2nd Half", goalscorers, cards, substitutions['home'] ?? [], substitutions['away'] ?? [], false),
+          buildEventSection("1st Half", goalscorers, cards, substitutions['home'] ?? [], substitutions['away'] ?? [], "1st Half"),
+          SizedBox(height: 20),
+          buildEventSection("2nd Half", goalscorers, cards, substitutions['home'] ?? [], substitutions['away'] ?? [], "2nd Half"),
         ],
       ),
     );
   }
 
-  Widget buildEventSection(String title, List<dynamic> goals, List<dynamic> cards, List<dynamic> homeSubs, List<dynamic> awaySubs, bool isFirstHalf) {
+  Widget buildEventSection(
+    String title,
+    List<dynamic> goalscorers,
+    List<dynamic> cards,
+    List<dynamic> homeSubs,
+    List<dynamic> awaySubs,
+    String halfPeriod,
+  ) {
+    List<Widget> eventWidgets = [
+      Text(
+        title,
+        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+      ),
+    ];
+
+    // Add goalscorers
+    eventWidgets.addAll(
+      goalscorers
+          .where((goal) => goal['score_info_time'] == halfPeriod)
+          .map<Widget>(
+            (goal) => ListTile(
+              leading: Icon(Icons.sports_soccer, color: Colors.green),
+              title: Text(
+                "${goal['time']}' ${goal['home_scorer']?.isNotEmpty == true ? goal['home_scorer'] : goal['away_scorer']} (Goal)",
+              ),
+              subtitle: Text(
+                "Assist: ${goal['home_assist']?.isNotEmpty == true ? goal['home_assist'] : goal['away_assist'] ?? 'No assist'}",
+              ),
+            ),
+          ),
+    );
+
+    // Add cards
+    eventWidgets.addAll(
+      cards
+          .where((card) => card['score_info_time'] == halfPeriod)
+          .map<Widget>(
+            (card) => ListTile(
+              leading: Icon(Icons.warning, color: card['card'] == 'yellow card' ? Colors.yellow : Colors.red),
+              title: Text(
+                "${card['time']}' ${card['home_fault']?.isNotEmpty == true ? card['home_fault'] : card['away_fault']} (${capitalize(card['card']?.replaceAll(' card', ''))})",
+              ),
+            ),
+          ),
+    );
+
+    // Add home substitutions
+    eventWidgets.addAll(
+      homeSubs
+          .map<Widget>(
+            (sub) => ListTile(
+              leading: Icon(Icons.sync, color: Colors.blue),
+              title: Text("${sub['time']}' ${sub['substitution']} (Sub)"),
+            ),
+          ),
+    );
+
+    // Add away substitutions
+    eventWidgets.addAll(
+      awaySubs
+          .map<Widget>(
+            (sub) => ListTile(
+              leading: Icon(Icons.sync, color: Colors.blue),
+              title: Text("${sub['time']}' ${sub['substitution']} (Sub)"),
+            ),
+          ),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueAccent)),
-        ...goals.where((g) => isFirstHalf ? g['time'].endsWith("1") : g['time'].endsWith("2")).map<Widget>((goal) => ListTile(
-          title: Text("${goal['time']}' ${goal['home_scorer'] ?? goal['away_scorer']} (Goal)"),
-          subtitle: Text("Assist: ${goal['home_assist'] ?? goal['away_assist']}"),
-          leading: Icon(Icons.sports_soccer, color: Colors.green),
-        )),
-        ...cards.where((c) => isFirstHalf ? c['time'].endsWith("1") : c['time'].endsWith("2")).map<Widget>((card) => ListTile(
-          title: Text("${card['time']}' ${card['home_fault'] ?? card['away_fault']} (Card)"),
-          leading: Icon(Icons.warning, color: Colors.yellow),
-        )),
-        ...homeSubs.map<Widget>((sub) => ListTile(
-          title: Text("${sub['time']}' ${sub['substitution']} (Sub)"),
-          leading: Icon(Icons.sync, color: Colors.blue),
-        )),
-        ...awaySubs.map<Widget>((sub) => ListTile(
-          title: Text("${sub['time']}' ${sub['substitution']} (Sub)"),
-          leading: Icon(Icons.sync, color: Colors.blue),
-        )),
-      ],
+      children: eventWidgets,
     );
+  }
+
+  String capitalize(String? input) {
+    if (input == null || input.isEmpty) return '';
+    return input[0].toUpperCase() + input.substring(1);
   }
 }

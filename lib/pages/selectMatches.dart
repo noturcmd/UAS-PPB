@@ -73,12 +73,16 @@ class _SelectMatchesScreenState extends State<SelectMatchesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blueGrey[800],
       appBar: AppBar(
-        backgroundColor: Colors.grey[800], // Change this to your desired color
+        backgroundColor: Colors.grey[800], // Change this to your desired color'
+          iconTheme: IconThemeData(
+            color: Colors.white, // Change the color of the drawer (hamburger) icon
+          ),
         title: Text(
           widget.matchType == 'recent'
-              ? 'Select League for Upcoming Matches'
-              : 'Select League for Result Matches',
+              ? 'League for Upcoming Matches'
+              : 'League for Result Matches',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,

@@ -44,20 +44,17 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
   }
 
   Future<void> _fetchLogos() async {
-    const apiKey = '5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192';  // Replace with your actual API key
+    const apiKey = '5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192'; // Replace with your actual API key
     final url = Uri.parse('https://apiv3.apifootball.com/?action=get_teams&league_id=${widget.matchData['leagueId']}&APIkey=$apiKey');
 
     try {
       var response = await http.get(url);
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
-        print(data);  // Check what the API returns
         setState(() {
           homeLogoUrl = _findTeamLogo(data, widget.matchData['homeTeam']);
           awayLogoUrl = _findTeamLogo(data, widget.matchData['awayTeam']);
         });
-        print('Home Logo: $homeLogoUrl');  // See what URL is set for home
-        print('Away Logo: $awayLogoUrl');  // See what URL is set for away
       } else {
         print('Failed to load team logos from API with status code: ${response.statusCode}');
       }
@@ -66,25 +63,26 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
     }
   }
 
-
   String? _findTeamLogo(List<dynamic> teams, String teamName) {
-      print("Searching for logo of team: $teamName");
-      for (var team in teams) {
-          print("Checking team from API: ${team['team_name']}");
-          if (team['team_name'].toString().toLowerCase() == teamName.toLowerCase()) {
-              print("Match found. Badge URL: ${team['team_badge']}");
-              return team['team_badge'];
-          }
+    for (var team in teams) {
+      if (team['team_name'].toString().toLowerCase() == teamName.toLowerCase()) {
+        return team['team_badge'];
       }
-      print("No match found for team: $teamName");
-      return null;
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('${widget.matchData["homeTeam"]} vs ${widget.matchData["awayTeam"]}', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          '${widget.matchData["homeTeam"]} vs ${widget.matchData["awayTeam"]}',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
+        ),
+        backgroundColor: Colors.grey[200],
+        iconTheme: IconThemeData(color: Colors.black),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -98,30 +96,38 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
   }
 
   Widget _buildMatchHeader() {
-      return Container(
-        padding: EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          color: Colors.blueAccent.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Expanded(child: _buildTeamScoreColumn(widget.matchData["homeTeam"], widget.matchData["homeScore"], homeLogoUrl)),
-                Text("vs", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-                Expanded(child: _buildTeamScoreColumn(widget.matchData["awayTeam"], widget.matchData["awayScore"], awayLogoUrl)),
-              ],
+    return Container(
+      padding: EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Expanded(child: _buildTeamScoreColumn(widget.matchData["homeTeam"], widget.matchData["homeScore"], homeLogoUrl)),
+              Text(
+                "vs",
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black),
+                textAlign: TextAlign.center,
+              ),
+              Expanded(child: _buildTeamScoreColumn(widget.matchData["awayTeam"], widget.matchData["awayScore"], awayLogoUrl)),
+            ],
+          ),
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              'Stadium: ${widget.matchData["stadium"]}',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              textAlign: TextAlign.center,
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 8.0),
-              child: Text('Stadium: ${widget.matchData["stadium"]}', style: TextStyle(fontSize: 16, color: Colors.grey[700]), textAlign: TextAlign.center),
-            ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
   }
 
   void updateContent(String title) {
@@ -151,7 +157,6 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
     });
   }
 
-
   Widget _buildTeamScoreColumn(String team, int score, String? logoUrl) {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -163,55 +168,64 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
             height: 50,
             fit: BoxFit.cover,
             errorBuilder: (BuildContext context, Object exception, StackTrace? stackTrace) {
-              print('Failed to load image: $logoUrl');
-              return Icon(Icons.broken_image);  // More explicit icon for loading failure
+              return Icon(Icons.broken_image, color: Colors.grey[600]);
             },
           ),
         SizedBox(height: 8),
-        Text(team, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-        Text('Score: $score', style: TextStyle(fontSize: 16, color: Colors.grey[700]), textAlign: TextAlign.center),
+        Text(
+          team,
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+          textAlign: TextAlign.center,
+        ),
+        Text(
+          'Score: $score',
+          style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
 
   Widget _buildMenuBox() {
-      return Container(
-        margin: EdgeInsets.all(10), // Provides clear space around the container
-        padding: EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white, // Neutral background color to emphasize buttons
-          borderRadius: BorderRadius.circular(15), // Smoothly rounded corners
-          boxShadow: [ // Subtle shadow for a raised effect
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 10,
-              offset: Offset(0, 5),
-            )
-          ],
+    return Container(
+      margin: EdgeInsets.all(10),
+      padding: EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 10,
+            offset: Offset(0, 5),
+          )
+        ],
+      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: ['Match Summary', 'Lineups', 'Statistics', 'Standings']
+              .map((title) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: _buildMenuButton(title),
+                  ))
+              .toList(),
         ),
-        child: SingleChildScrollView( // Ensures the container can scroll horizontally if space is tight
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: ['Match Summary', 'Lineups', 'Statistics', 'Standings']
-                .map((title) => Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4), // Ensures space between buttons
-                  child: _buildMenuButton(title),
-                ))
-                .toList(),
-          ),
-        ),
-      );
+      ),
+    );
   }
 
   Widget _buildMenuButton(String title) {
     return ElevatedButton(
       onPressed: () => updateContent(title),
-      child: Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+      child: Text(
+        title,
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+      ),
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.blue.shade300, // Vibrant background color
-        foregroundColor: Colors.white, // Text color for readability
+        backgroundColor: Colors.grey[300],
         elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         padding: EdgeInsets.symmetric(horizontal: 8, vertical: 12),

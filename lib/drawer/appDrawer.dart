@@ -17,6 +17,7 @@ class AppDrawer extends StatelessWidget {
             padding: EdgeInsets.zero, // Remove internal padding
             child: Container(
               width: double.infinity, // Extend to fill the entire width
+
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center, // Center content vertically
                 children: [

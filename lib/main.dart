@@ -19,7 +19,7 @@ class FootballApp extends StatelessWidget {
       title: 'Soccer Hub',
       theme: ThemeData(
         primarySwatch: Colors.red,
-        scaffoldBackgroundColor: Colors.grey[800],
+        scaffoldBackgroundColor: Colors.white,
       ),
       home: NavigationScreen(),
       debugShowCheckedModeBanner: false,

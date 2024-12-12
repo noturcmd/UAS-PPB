@@ -55,6 +55,12 @@ class _TeamSummaryState extends State<TeamSummary> {
     }
   }
 
+  String capitalize(String? input) {
+    if (input == null || input.isEmpty) return '';
+    return input[0].toUpperCase() + input.substring(1);
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -156,14 +162,24 @@ class _TeamSummaryState extends State<TeamSummary> {
           ),
     );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: eventWidgets,
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 10.0),
+      padding: const EdgeInsets.all(10.0),
+      decoration: BoxDecoration(
+        color: Colors.white, // Background color
+        borderRadius: BorderRadius.circular(10.0), // Rounded corners
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1), // Shadow color
+            blurRadius: 6.0, // Shadow blur radius
+            offset: Offset(0, 3), // Shadow position
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: eventWidgets,
+      ),
     );
-  }
-
-  String capitalize(String? input) {
-    if (input == null || input.isEmpty) return '';
-    return input[0].toUpperCase() + input.substring(1);
   }
 }

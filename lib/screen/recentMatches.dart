@@ -100,6 +100,7 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Text('${widget.leagueName} Matches'),
       ),
@@ -151,11 +152,29 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
                   child: RefreshIndicator(
                     onRefresh: _refreshData,
                     child: filteredMatches.isEmpty
-                        ? Center(
-                            child: Text(
-                              'No matches available for $selectedDate.',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 16),
+                      ? Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'No matches available.',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 24, // Larger font size
+                                    fontWeight: FontWeight.bold, // Bold text
+                                    color: Colors.black54, // Optional color for visibility
+                                  ),
+                                ), // Space between the two texts
+                                Text(
+                                  '"' + widget.leagueName + '"',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 20, // Slightly smaller font size for the league name
+                                    fontWeight: FontWeight.w500, // Medium weight for distinction
+                                    color: Colors.black45, // Subtle color for differentiation
+                                  ),
+                                ),
+                              ],
                             ),
                           )
                         : ListView.builder(

@@ -12,7 +12,7 @@ class AppDrawer extends StatelessWidget {
         children: [
           DrawerHeader(
             decoration: BoxDecoration(
-              color: Colors.black,
+              color: Colors.grey[800],
             ),
             padding: EdgeInsets.zero, // Remove internal padding
             child: Container(

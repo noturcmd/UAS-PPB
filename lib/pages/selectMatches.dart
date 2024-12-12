@@ -18,6 +18,7 @@ class SelectMatchesScreen extends StatefulWidget {
 class _SelectMatchesScreenState extends State<SelectMatchesScreen> {
   Map<String, List<dynamic>> countriesWithLeagues = {};
   bool isLoading = true;
+  String searchQuery = ""; // Holds the search query
 
   @override
   void initState() {
@@ -73,9 +74,40 @@ class _SelectMatchesScreenState extends State<SelectMatchesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.matchType == 'recent'
-            ? 'Select League for Upcoming Matches'
-            : 'Select League for Result Matches'),
+        backgroundColor: Colors.grey[800], // Change this to your desired color
+        title: Text(
+          widget.matchType == 'recent'
+              ? 'Select League for Upcoming Matches'
+              : 'Select League for Result Matches',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.white, // Change text color to white
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(50.0),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              onChanged: (value) {
+                setState(() {
+                  searchQuery = value.toLowerCase();
+                });
+              },
+              decoration: InputDecoration(
+                hintText: 'Search leagues or countries...',
+                prefixIcon: Icon(Icons.search, color: Colors.grey),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.0),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
       drawer: AppDrawer(),
       body: isLoading
@@ -88,11 +120,18 @@ class _SelectMatchesScreenState extends State<SelectMatchesScreen> {
                   List<dynamic> leagues = entry.value;
                   String? countryLogo = leagues.isNotEmpty ? leagues[0]['country_logo'] : null;
 
+                  // Filter leagues and countries based on the search query
+                  if (searchQuery.isNotEmpty &&
+                      !country.toLowerCase().contains(searchQuery) &&
+                      !leagues.any((league) => (league['league_name'] ?? '').toLowerCase().contains(searchQuery))) {
+                    return SizedBox.shrink(); // Skip items that don't match the search
+                  }
+
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
                     elevation: 4,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.0),
+                      borderRadius: BorderRadius.circular(15.0), // More rounded corners
                     ),
                     child: ExpansionTile(
                       leading: _buildCountryLogo(countryLogo),
@@ -101,6 +140,7 @@ class _SelectMatchesScreenState extends State<SelectMatchesScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
+                          color: Colors.blueGrey, // Improved text color
                         ),
                       ),
                       children: leagues.map((league) {
@@ -108,7 +148,7 @@ class _SelectMatchesScreenState extends State<SelectMatchesScreen> {
                           leading: _buildLeagueLogo(league['league_logo']),
                           title: Text(
                             league['league_name'] ?? 'Unknown League',
-                            style: TextStyle(fontSize: 16),
+                            style: TextStyle(fontSize: 16, color: Colors.grey[800]), // Consistent style
                           ),
                           onTap: () => _navigateToMatches(league),
                         );

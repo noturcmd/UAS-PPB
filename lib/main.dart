@@ -18,29 +18,11 @@ class FootballApp extends StatelessWidget {
     return MaterialApp(
       title: 'Soccer Hub',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.white,
+        primarySwatch: Colors.red,
+        scaffoldBackgroundColor: Colors.grey[800],
       ),
       home: NavigationScreen(),
       debugShowCheckedModeBanner: false,
-    );
-  }
-}
-
-class AuthWrapper extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasData) {
-          return NavigationScreen();
-        } else {
-          return LoginPage();
-        }
-      },
     );
   }
 }
@@ -58,7 +40,7 @@ class NavigationScreen extends StatelessWidget {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.grey[900],
         elevation: 0,
       ),
       drawer: AppDrawer(),
@@ -67,11 +49,13 @@ class NavigationScreen extends StatelessWidget {
           image: DecorationImage(
             image: AssetImage('images/background/home_bg.jpg'),
             fit: BoxFit.cover,
+            colorFilter: ColorFilter.mode(
+                Colors.grey.withOpacity(0.2), BlendMode.darken),
           ),
         ),
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 32.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -126,7 +110,7 @@ class NavigationScreen extends StatelessWidget {
                   onPressed: () async {
                     await FirebaseAuth.instance.signOut();
                   },
-                  color: Colors.redAccent,
+                  color: Colors.red,
                 ),
               ],
             ),
@@ -140,21 +124,31 @@ class NavigationScreen extends StatelessWidget {
       {required String label,
       required IconData icon,
       required VoidCallback onPressed,
-      Color color = Colors.blue}) {
-    return ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+      Color color = const Color.fromARGB(126, 0, 0, 0)}) {
+    return SizedBox(
+      width: double.infinity,
+      height: 60, // Ensuring all buttons have the same height
+      child: Material(
+        elevation: 5, // Adds shadow
+        shadowColor: Colors.black.withOpacity(0.5), // Shadow color
+        borderRadius: BorderRadius.circular(8), // Match the button shape
+        child: ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color,
+            foregroundColor: color == Colors.white ? Colors.grey[800] : Colors.white,
+            padding: EdgeInsets.symmetric(horizontal: 24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          icon: Icon(icon, size: 24),
+          label: Text(
+            label,
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          onPressed: onPressed,
         ),
       ),
-      icon: Icon(icon, size: 24),
-      label: Text(
-        label,
-        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-      ),
-      onPressed: onPressed,
     );
   }
 }

@@ -16,7 +16,7 @@ class SelectMatchesScreen extends StatefulWidget {
 }
 
 class _SelectMatchesScreenState extends State<SelectMatchesScreen> {
-  List<dynamic> leagues = [];
+  Map<String, List<dynamic>> countriesWithLeagues = {};
   bool isLoading = true;
 
   @override
@@ -34,8 +34,20 @@ class _SelectMatchesScreenState extends State<SelectMatchesScreen> {
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        Map<String, List<dynamic>> groupedLeagues = {};
+
+        for (var league in data) {
+          String country = league['country_name'] ?? 'Unknown Country';
+          if (!groupedLeagues.containsKey(country)) {
+            groupedLeagues[country] = [];
+          }
+          groupedLeagues[country]?.add(league);
+        }
+
         setState(() {
-          leagues = data;
+          countriesWithLeagues = Map.fromEntries(
+            groupedLeagues.entries.toList()..sort((a, b) => a.key.compareTo(b.key)),
+          );
           isLoading = false;
         });
       } else {
@@ -62,78 +74,94 @@ class _SelectMatchesScreenState extends State<SelectMatchesScreen> {
           ? Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(8.0),
-              child: GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: 3 / 2,
-                ),
-                itemCount: leagues.length,
-                itemBuilder: (context, index) {
-                  final league = leagues[index];
-                  return GestureDetector(
-                    onTap: () {
-                      if (widget.matchType == 'recent') {
-                        // Navigate to Recent Matches page
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => LeagueMatchesScreen(
-                              leagueName: league['league_name'] ?? 'Unknown League',
-                              leagueId: league['league_id'].toString(),
-                            ),
-                          ),
-                        );
-                      } else if (widget.matchType == 'result') {
-                        // Navigate to Result Matches page
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => LeagueResultScreen(
-                              leagueName: league['league_name'] ?? 'Unknown League',
-                              leagueId: league['league_id'].toString(),
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                    child: Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15.0),
-                      ),
-                      elevation: 5,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            flex: 2,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: league['league_logo'] != null
-                                  ? Image.network(
-                                      league['league_logo'],
-                                      fit: BoxFit.cover,
-                                    )
-                                  : Icon(Icons.image_not_supported),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text(
-                              league['league_name'] ?? 'Unknown League',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+              child: ListView(
+                children: countriesWithLeagues.entries.map((entry) {
+                  String country = entry.key;
+                  List<dynamic> leagues = entry.value;
+                  String? countryLogo = leagues.isNotEmpty ? leagues[0]['country_logo'] : null;
+
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    child: ExpansionTile(
+                      leading: countryLogo != null && countryLogo.isNotEmpty
+                          ? ClipRRect(
+                              borderRadius: BorderRadius.circular(8.0),
+                              child: Image.network(
+                                countryLogo,
+                                width: 50,
+                                height: 50,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Icon(Icons.flag_outlined, size: 40, color: Colors.grey);
+                                },
                               ),
-                            ),
-                          ),
-                        ],
+                            )
+                          : Icon(Icons.flag_outlined, size: 50, color: Colors.grey),
+                      title: Text(
+                        country,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                      children: leagues.map((league) {
+                        return ListTile(
+                          leading: (league['league_logo'] != null && league['league_logo'].isNotEmpty)
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8.0),
+                                  child: Image.network(
+                                    league['league_logo'],
+                                    width: 40,
+                                    height: 40,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Text(
+                                        "No Logo",
+                                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                                      );
+                                    },
+                                  ),
+                                )
+                              : Text(
+                                  "No Logo",
+                                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                                ),
+                          title: Text(
+                            league['league_name'] ?? 'Unknown League',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                          onTap: () {
+                            if (widget.matchType == 'recent') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => LeagueMatchesScreen(
+                                    leagueName: league['league_name'] ?? 'Unknown League',
+                                    leagueId: league['league_id'].toString(),
+                                  ),
+                                ),
+                              );
+                            } else if (widget.matchType == 'result') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => LeagueResultScreen(
+                                    leagueName: league['league_name'] ?? 'Unknown League',
+                                    leagueId: league['league_id'].toString(),
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                        );
+                      }).toList(),
                     ),
                   );
-                },
+                }).toList(),
               ),
             ),
     );

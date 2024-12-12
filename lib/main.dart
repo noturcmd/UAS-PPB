@@ -5,11 +5,10 @@ import 'pages/login_page.dart';
 import 'drawer/appDrawer.dart';
 import 'pages/selectMatches.dart';
 import 'pages/favoritesTeam.dart';
-import 'screen/resultMatches.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(); // Inisialisasi Firebase
+  await Firebase.initializeApp();
   runApp(FootballApp());
 }
 
@@ -37,9 +36,9 @@ class AuthWrapper extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
         } else if (snapshot.hasData) {
-          return NavigationScreen(); // Halaman utama jika sudah login
+          return NavigationScreen();
         } else {
-          return LoginPage(); // Halaman login jika belum login
+          return LoginPage();
         }
       },
     );
@@ -53,9 +52,10 @@ class NavigationScreen extends StatelessWidget {
       appBar: AppBar(
         iconTheme: IconThemeData(color: Colors.white),
         title: Text(
-          'Football Match App',
+          'Soccer Hub',
           style: TextStyle(
-            color: const Color.fromRGBO(255, 255, 255, 1),
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
           ),
         ),
         backgroundColor: Colors.black,
@@ -70,50 +70,91 @@ class NavigationScreen extends StatelessWidget {
           ),
         ),
         child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _buildButton(
+                  context,
+                  label: 'View Recent Matches',
+                  icon: Icons.sports_soccer,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
                         builder: (context) =>
-                            SelectMatchesScreen(matchType: 'recent')),
-                  );
-                },
-                child: Text('View Recent Matches'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => FavoritesScreen()),
-                  );
-                },
-                child: Text('Favorites'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
+                            SelectMatchesScreen(matchType: 'recent'),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(height: 16),
+                _buildButton(
+                  context,
+                  label: 'Favorites',
+                  icon: Icons.favorite,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FavoritesScreen(),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(height: 16),
+                _buildButton(
+                  context,
+                  label: 'View Match Results',
+                  icon: Icons.pie_chart,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
                         builder: (context) =>
-                            SelectMatchesScreen(matchType: 'result')),
-                  );
-                },
-                child: Text('View Match Results'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut(); // Logout
-                },
-                child: Text('Logout'),
-              ),
-            ],
+                            SelectMatchesScreen(matchType: 'result'),
+                      ),
+                    );
+                  },
+                ),
+                SizedBox(height: 16),
+                _buildButton(
+                  context,
+                  label: 'Logout',
+                  icon: Icons.logout,
+                  onPressed: () async {
+                    await FirebaseAuth.instance.signOut();
+                  },
+                  color: Colors.redAccent,
+                ),
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildButton(BuildContext context,
+      {required String label,
+      required IconData icon,
+      required VoidCallback onPressed,
+      Color color = Colors.blue}) {
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      icon: Icon(icon, size: 24),
+      label: Text(
+        label,
+        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      ),
+      onPressed: onPressed,
     );
   }
 }

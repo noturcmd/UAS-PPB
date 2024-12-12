@@ -68,17 +68,17 @@ class AppDrawer extends StatelessWidget {
                     );
                   },
                 ),
-                _buildDrawerItem(
-                  icon: Icons.favorite,
-                  title: 'Favorites',
-                  onTap: () {
-                    Navigator.pop(context);
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => FavoritesScreen()),
-                    );
-                  },
-                ),
+                // _buildDrawerItem(
+                //   icon: Icons.favorite,
+                //   title: 'Favorites',
+                //   onTap: () {
+                //     Navigator.pop(context);
+                //     Navigator.pushReplacement(
+                //       context,
+                //       MaterialPageRoute(builder: (context) => FavoritesScreen()),
+                //     );
+                //   },
+                // ),
                 _buildDrawerItem(
                   icon: Icons.sports_soccer,
                   title: 'Upcoming Matches',

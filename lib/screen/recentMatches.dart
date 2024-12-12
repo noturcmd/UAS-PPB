@@ -73,6 +73,16 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
     }
   }
 
+  String _formatJakartaTime(String matchDate, String matchTime) {
+    try {
+      DateTime jakartaTime = convertToJakartaTime(matchDate, matchTime);
+      return '${jakartaTime.hour.toString().padLeft(2, '0')}:${jakartaTime.minute.toString().padLeft(2, '0')} WIB';
+    } catch (e) {
+      print('Error converting time: $e');
+      return 'Invalid Time';
+    }
+  }
+
   String _twoDigits(int n) => n.toString().padLeft(2, '0');
 
   String _getNextWeekDate() {
@@ -233,7 +243,7 @@ class _LeagueMatchesScreenState extends State<LeagueMatchesScreen> {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text('Date: ${jakartaTime.toLocal().toIso8601String().split('T')[0]}'),
-                                        Text('Time: ${jakartaTime.hour.toString().padLeft(2, '0')}:${jakartaTime.minute.toString().padLeft(2, '0')} WIB'),
+                                        Text('Time: ${_formatJakartaTime(match['match_date'], match['match_time'])}'),
                                         Text('Stadium: ${match['match_stadium'] ?? "Unknown"}'),
                                         Text('Status: ${match['match_status']}'),
                                       ],

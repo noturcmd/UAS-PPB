@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'pages/login_page.dart';
 import 'drawer/appDrawer.dart';
 import 'pages/selectMatches.dart';
 import 'pages/favoritesTeam.dart';
@@ -73,20 +72,20 @@ class NavigationScreen extends StatelessWidget {
                     );
                   },
                 ),
-                SizedBox(height: 16),
-                _buildButton(
-                  context,
-                  label: 'Favorites',
-                  icon: Icons.favorite,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => FavoritesScreen(),
-                      ),
-                    );
-                  },
-                ),
+                // SizedBox(height: 16),
+                // _buildButton(
+                //   context,
+                //   label: 'Favorites',
+                //   icon: Icons.favorite,
+                //   onPressed: () {
+                //     Navigator.push(
+                //       context,
+                //       MaterialPageRoute(
+                //         builder: (context) => FavoritesScreen(),
+                //       ),
+                //     );
+                //   },
+                // ),
                 SizedBox(height: 16),
                 _buildButton(
                   context,

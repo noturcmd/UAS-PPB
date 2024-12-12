@@ -144,7 +144,7 @@ class _MatchStatisticScreenState extends State<MatchStatisticScreen> {
           if (matchId != -1) {
             currentContent = TeamLineup(matchId: matchId);
           } else {
-            currentContent = Center(child: Text("Invalid match ID"));
+            currentContent = Center(child: Text("No Match Data Available"));
           }
           break;
         case 'Standings':

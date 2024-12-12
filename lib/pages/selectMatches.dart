@@ -100,7 +100,7 @@ class _SelectMatchesScreenState extends State<SelectMatchesScreen> {
                 });
               },
               decoration: InputDecoration(
-                hintText: 'Search leagues or countries...',
+                hintText: 'Search the countries...',
                 prefixIcon: Icon(Icons.search, color: Colors.grey),
                 filled: true,
                 fillColor: Colors.white,

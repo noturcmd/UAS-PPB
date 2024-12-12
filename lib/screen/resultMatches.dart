@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:uas_ppb/function/timeConverter.dart';
 import 'package:uas_ppb/screen/matchStatistic.dart';
 
 class LeagueResultScreen extends StatefulWidget {
@@ -69,6 +70,16 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error fetching results: $e')),
       );
+    }
+  }
+
+  String _formatJakartaTime(String matchDate, String matchTime) {
+    try {
+      DateTime jakartaTime = convertToJakartaTime(matchDate, matchTime);
+      return '${jakartaTime.toLocal().hour.toString().padLeft(2, '0')}:${jakartaTime.toLocal().minute.toString().padLeft(2, '0')} WIB';
+    } catch (e) {
+      print('Error converting time: $e');
+      return 'Invalid Time';
     }
   }
 
@@ -200,7 +211,11 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
                                     subtitle: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text('Kick-off at ${match['match_time']}'),
+                                        if (match['match_date'] != null && match['match_time'] != null)
+                                          Text(
+                                            'Kick-off: ${_formatJakartaTime(match['match_date'], match['match_time'])}',
+                                            style: TextStyle(fontSize: 16),
+                                          ),
                                         Text('Stadium: ${match['match_stadium'] ?? "Unknown"}'),
                                         Text('Status: ${match['match_status'] ?? "Finished"}'),
                                       ],
@@ -222,9 +237,20 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
     const String apiKey = "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192";
     final matchId = match['match_id'];
 
+    // Show a loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent dismissing the dialog
+      builder: (context) => Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
     try {
       final url = Uri.parse('$apiUrl/?action=get_statistics&match_id=$matchId&APIkey=$apiKey');
       final response = await http.get(url);
+
+      Navigator.pop(context); // Close the loading dialog
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -266,6 +292,7 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
         throw Exception('Failed to load statistics. Status code: ${response.statusCode}');
       }
     } catch (e) {
+      Navigator.pop(context); // Close the loading dialog if an error occurs
       print('Error fetching statistics: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error fetching statistics: $e')),

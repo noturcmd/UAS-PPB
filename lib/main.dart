@@ -20,8 +20,82 @@ class FootballApp extends StatelessWidget {
         primarySwatch: Colors.red,
         scaffoldBackgroundColor: Colors.white,
       ),
-      home: NavigationScreen(),
+      home: SplashScreen(),
       debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  @override
+  _SplashScreenState createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: Duration(seconds: 3),
+      vsync: this,
+    );
+
+    _fadeAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeIn,
+    );
+
+    _controller.forward();
+
+    Future.delayed(Duration(seconds: 3), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => NavigationScreen()),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Container(
+          color: Colors.grey[900],
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'images/logo/soccer_hub.png', // Add your logo here
+                  height: 300,
+                  width: 300,
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Soccer Hub',
+                  style: TextStyle(
+                    fontSize: 34,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -72,20 +146,6 @@ class NavigationScreen extends StatelessWidget {
                     );
                   },
                 ),
-                // SizedBox(height: 16),
-                // _buildButton(
-                //   context,
-                //   label: 'Favorites',
-                //   icon: Icons.favorite,
-                //   onPressed: () {
-                //     Navigator.push(
-                //       context,
-                //       MaterialPageRoute(
-                //         builder: (context) => FavoritesScreen(),
-                //       ),
-                //     );
-                //   },
-                // ),
                 SizedBox(height: 16),
                 _buildButton(
                   context,
@@ -101,6 +161,20 @@ class NavigationScreen extends StatelessWidget {
                     );
                   },
                 ),
+                // SizedBox(height: 16),
+                // _buildButton(
+                //   context,
+                //   label: 'Favorites',
+                //   icon: Icons.favorite,
+                //   onPressed: () {
+                //     Navigator.push(
+                //       context,
+                //       MaterialPageRoute(
+                //         builder: (context) => FavoritesScreen(),
+                //       ),
+                //     );
+                //   },
+                // ),
                 SizedBox(height: 16),
                 _buildButton(
                   context,

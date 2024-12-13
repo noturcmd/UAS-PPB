@@ -11,14 +11,14 @@ class TeamStatsTable extends StatelessWidget {
       return Center(
         child: Text(
           "No statistics available.",
-          style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
+          style: const TextStyle(fontSize: 16, fontStyle: FontStyle.italic),
         ),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Team Statistics"),
+        title: const Text("Team Statistics"),
         automaticallyImplyLeading: false, // Removes the back button
       ),
       body: Padding(
@@ -34,9 +34,7 @@ class TeamStatsTable extends StatelessWidget {
                     1: FlexColumnWidth(3),
                     2: FlexColumnWidth(1),
                   },
-                  border: TableBorder.symmetric(
-                    inside: BorderSide(color: Colors.grey.shade300, width: 1),
-                  ),
+                  border: TableBorder.all(color: Colors.grey.shade300, width: 1),
                   children: [
                     _buildTableHeader(),
                     ..._buildTableRows(),
@@ -53,9 +51,9 @@ class TeamStatsTable extends StatelessWidget {
   TableRow _buildTableHeader() {
     return TableRow(
       decoration: BoxDecoration(color: Colors.grey.shade200),
-      children: [
+      children: const [
         Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: EdgeInsets.all(8.0),
           child: Text(
             "Home",
             textAlign: TextAlign.center,
@@ -63,7 +61,7 @@ class TeamStatsTable extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: EdgeInsets.all(8.0),
           child: Text(
             "Statistic",
             textAlign: TextAlign.center,
@@ -71,7 +69,7 @@ class TeamStatsTable extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: EdgeInsets.all(8.0),
           child: Text(
             "Away",
             textAlign: TextAlign.center,
@@ -84,9 +82,12 @@ class TeamStatsTable extends StatelessWidget {
 
   List<TableRow> _buildTableRows() {
     return statistics.entries.map((entry) {
+      final homeValue = entry.value["home"]?.toString() ?? "Not Available";
+      final awayValue = entry.value["away"]?.toString() ?? "Not Available";
+
       return TableRow(
         decoration: BoxDecoration(
-          color: entry.key.contains("Goal")
+          color: entry.key.toLowerCase().contains("goal")
               ? Colors.yellow.withOpacity(0.2)
               : Colors.transparent,
         ),
@@ -94,9 +95,9 @@ class TeamStatsTable extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Text(
-              entry.value["home"].toString(),
+              homeValue,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: 14),
             ),
           ),
           Padding(
@@ -104,15 +105,15 @@ class TeamStatsTable extends StatelessWidget {
             child: Text(
               entry.key,
               textAlign: TextAlign.center,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
             child: Text(
-              entry.value["away"].toString(),
+              awayValue,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14),
+              style: const TextStyle(fontSize: 14),
             ),
           ),
         ],

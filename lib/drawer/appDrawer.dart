@@ -24,11 +24,11 @@ class AppDrawer extends StatelessWidget {
                   CircleAvatar(
                     radius: 40,
                     backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.sports_soccer,
-                      size: 48,
-                      color: Colors.black,
-                    ),
+                    child: Image.asset(
+                    'images/logo/soccer_hub.png', // Add your logo here
+                    height: 300,
+                    width: 300,
+                  ),
                   ),
                   SizedBox(height: 12),
                   Text(

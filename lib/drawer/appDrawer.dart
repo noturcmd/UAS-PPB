@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uas_ppb/main.dart';
 import '../pages/selectMatches.dart';
-import '../pages/favoritesTeam.dart';
 import '../pages/login_page.dart';
 
 class AppDrawer extends StatelessWidget {

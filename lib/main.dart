@@ -3,7 +3,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'drawer/appDrawer.dart';
 import 'pages/selectMatches.dart';
-import 'pages/favoritesTeam.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

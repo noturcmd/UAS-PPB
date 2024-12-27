@@ -23,7 +23,7 @@ class _LeagueStandingsState extends State<LeagueStandings> {
 
   Future<void> fetchStandings() async {
     String apiUrl = 'https://apiv3.apifootball.com';
-    String apiKey = '5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192';
+    String apiKey = '1a5b2d92cbb6a9b8a1b873068324468a40e6d73097ac24196d7ab886679269ff';
     final url = "$apiUrl/?action=get_standings&league_id=${widget.leagueId}&APIkey=$apiKey";
 
     try {

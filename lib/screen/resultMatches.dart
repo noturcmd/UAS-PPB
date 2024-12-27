@@ -33,7 +33,7 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
   // Fetch match results for the selected league
   Future<void> fetchLeagueResults() async {
     const String apiUrl = "https://apiv3.apifootball.com";
-    const String apiKey = "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192";
+    const String apiKey = "1a5b2d92cbb6a9b8a1b873068324468a40e6d73097ac24196d7ab886679269ff";
 
     DateTime now = DateTime.now();
     String weekAgo = now.subtract(Duration(days: 7)).toString().split(' ')[0];
@@ -234,7 +234,7 @@ class _LeagueResultScreenState extends State<LeagueResultScreen> {
 
   void _navigateToMatchStatistics(dynamic match) async {
     final String apiUrl = "https://apiv3.apifootball.com";
-    const String apiKey = "5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192";
+    const String apiKey = "1a5b2d92cbb6a9b8a1b873068324468a40e6d73097ac24196d7ab886679269ff";
     final matchId = match['match_id'];
 
     // Show a loading dialog

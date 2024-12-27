@@ -25,7 +25,7 @@ class _TeamLineupState extends State<TeamLineup> {
   Future<void> fetchLineupData() async {
     String apiUrl = 'https://apiv3.apifootball.com';
     String apiKey =
-        '5e213ecca1111bb3f2f67189e7a0e83e5d89ea41586b02afb2c713a3a16c6192'; // Use your real API key
+        '1a5b2d92cbb6a9b8a1b873068324468a40e6d73097ac24196d7ab886679269ff'; // Use your real API key
     final url =
         "$apiUrl/?action=get_lineups&match_id=${widget.matchId}&APIkey=$apiKey";
 
